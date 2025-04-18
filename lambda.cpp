@@ -143,7 +143,7 @@ int main () {
 	[z = std::move(xa)]() { printf("(Ln%d) xa._z=%u\n",__LINE__,z._x); }();
 
 #	if VER_ge17
-	// And, with idiotic as_const, can spare the inconvenience of creating a const-ref:
+	// And, with as_const, can spare the inconvenience of creating a const-ref:
 	[z = std::as_const(xa)]() { printf("(Ln%d) xa._z=%u\n",__LINE__,z._x); }();
 #	endif
 

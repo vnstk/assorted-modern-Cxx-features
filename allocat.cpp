@@ -59,8 +59,7 @@ DEF__nameOfAliasedMembType(rebind);
 
 template <typename AlloTrai>
 void dumpAlloTrai (void)
-{
-	fuPRlit("Entered fu");
+{	PRenteredFU;
 	const char *aliasedMembtypeName_mangled;
 	//
 	aliasedMembtypeName_mangled = nameOfAliasedMembType__value_type<AlloTrai>::c_str();
