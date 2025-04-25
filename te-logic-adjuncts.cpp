@@ -83,6 +83,29 @@ struct StrWra__b {
 	explicit StrWra__b (STR&& fwdgRef) : _s(std::forward<STR>(fwdgRef)) { PRwhat(fwdgRef); fuPRtyp(fwdgRef); }
 };
 
+void test__forwarding()
+{	PRenteredFU;
+	//
+	SAYeval(   StrWra__a{"foo"}   ); //str literal ==> std::string xvalue ==> StrWra__a's move ctor
+	std::string foo_strObj{"foo"};
+	SAYeval(   StrWra__a{foo_strObj}   );           // std::string lvalue ==> StrWra__a's copy ctor
+	SAYeval(   StrWra__a{std::move(foo_strObj)}   );// std::string prvalue ==> StrWra__a's move ctor.
+	const std::string cfoo_strObj{"foo"};
+	SAYeval(   StrWra__a{cfoo_strObj}   );
+	const std::string& rcfoo_strObj = cfoo_strObj;
+	SAYeval(   StrWra__a{rcfoo_strObj}   );
+	const char* foo_cstr = "foo";
+	SAYeval(   StrWra__a{foo_cstr}   );
+
+	puts("-----------------------------------------");
+	//
+	SAYeval(   StrWra__b{"bar"}   ); //str literal ==> std::string xvalue ==> StrWra__b's move ctor
+	std::string bar_strObj{"bar"};
+	SAYeval(   StrWra__b{bar_strObj}   );           // std::string lvalue ==> StrWra__b's copy ctor
+}
+
+
+
 
 /* Branch on cpiletime-discernible properties of a nontype te param.
 */
@@ -119,7 +142,6 @@ void test__branchOnPropertiesOfNontypeTearg()
 	Helper__a<9>();
 	Helper__b<5>();
 	Helper__b<9>();
-	puts("==============================================================");
 }
 
 
@@ -172,6 +194,7 @@ void test_selectivelyDisablingStmts__b (char ch) {
 }
 #endif
 
+
 #if VER_ge17 // Because uses "if constexpr".
 template<int N, int I = 0>
 void countUp() {
@@ -181,6 +204,13 @@ void countUp() {
 	}
 }
 #endif
+
+void test__if_constexpr()
+{	PRenteredFU;
+#if VER_ge17 // Because uses "if constexpr".
+	countUp<5>();
+#endif
+}
 
 
 /* Selectively disable oloads of a func.  Non-disabled oloads must differ materially
@@ -256,8 +286,6 @@ void test__selectOload()
 	selectOload__b<int,7>(carr); // oload distinguishable by fu params.
 	selectOload__b<double,5>(carr); // oload distinguishable by fu params.
 #endif
-	//
-	puts("==============================================================");
 }
 
 
@@ -295,7 +323,6 @@ void test__variables_te()
 	
 	int evalCpiletimeSum = CpiletimeSum<10,-30,7>;
 	PRval(evalCpiletimeSum  ,"%d");
-	puts("==============================================================");
 }
 
 
@@ -336,7 +363,6 @@ void test__conjunction ()
 	static_assert(! ref_and_unsi__a<decltype(ru), decltype(i)>  );
 	static_assert(! ref_and_unsi__a<decltype(pi), decltype(u)>  );
 	static_assert(! ref_and_unsi__a<decltype(pi), decltype(i)>  );
-	puts("==============================================================");
 }
 
 
@@ -361,7 +387,6 @@ void test__miscNifty()
 #endif
 	std::string sbunnies{"bunnies"};
 	assert(7 == collSize(sbunnies));
-	puts("==============================================================");
 }
 
 
@@ -369,6 +394,8 @@ int main() {
 	test__conjunction();
 	test__branchOnPropertiesOfNontypeTearg();
 	test__selectOload();
+	test__forwarding();
+	test__if_constexpr();
 
 	std::allocator<float> allof;
 //	auto retlen__a = len__a(allof);    // Cpiler error; icky.
@@ -394,31 +421,6 @@ int main() {
 	SAYeval( fTakeNoSmallArgs(42LLU) );
 //	SAYeval( fTakeNoSmallArgs(42LU) );
 //	SAYeval( fTakeNoSmallArgs(42U) );
-
-
-	SAYeval(   StrWra__a{"foo"}   ); //str literal ==> std::string xvalue ==> StrWra__a's move ctor
-	std::string foo_strObj{"foo"};
-	SAYeval(   StrWra__a{foo_strObj}   );           // std::string lvalue ==> StrWra__a's copy ctor
-	SAYeval(   StrWra__a{std::move(foo_strObj)}   );// std::string prvalue ==> StrWra__a's move ctor.
-	const std::string cfoo_strObj{"foo"};
-	SAYeval(   StrWra__a{cfoo_strObj}   );
-	const std::string& rcfoo_strObj = cfoo_strObj;
-	SAYeval(   StrWra__a{rcfoo_strObj}   );
-	const char* foo_cstr = "foo";
-	SAYeval(   StrWra__a{foo_cstr}   );
-
-	puts("-----------------------------------------");
-	puts("-----------------------------------------");
-	puts("-----------------------------------------");
-	//
-	SAYeval(   StrWra__b{"bar"}   ); //str literal ==> std::string xvalue ==> StrWra__b's move ctor
-	std::string bar_strObj{"bar"};
-	SAYeval(   StrWra__b{bar_strObj}   );           // std::string lvalue ==> StrWra__b's copy ctor
-	puts("-----------------------------------------");
-
-#if VER_ge17 // Because uses "if constexpr".
-	countUp<5>();
-#endif
 
 }
 

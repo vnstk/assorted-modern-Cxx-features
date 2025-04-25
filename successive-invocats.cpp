@@ -40,8 +40,8 @@ struct CatAdder {
 #if VER_ge17
 template<typename... Ts> // <--- te params
 decltype(auto) fold_subA (Ts... args) { // <--- fu params
-	printf("(Ln%d)  /%s/   Size of te parampack: %lu\n",__LINE__,currFU, sizeof...(Ts));
-	printf("(Ln%d)  /%s/   Size of fu parampack: %lu\n",__LINE__,currFU, sizeof...(args));
+	fuPRmsg("Size of te parampack: %zu\n", sizeof...(Ts));
+	fuPRmsg("Size of fu parampack: %zu\n", sizeof...(args));
 	return (... - args);                 // unary left fold   ---  "left-associative"
 }
 template<typename... Ts>
@@ -50,12 +50,12 @@ decltype(auto) fold_subB (Ts... args) {
 }
 template<typename... Ts>
 decltype(auto) fold_subC (Ts... args) {
-	printf("(Ln%d)  /%s/   Size of te parampack: %lu\n",__LINE__,currFU, sizeof...(Ts));
+	fuPRmsg("Size of te parampack: %zu\n", sizeof...(Ts));
 	return (100 - ... - args);           // binary left fold  ---   "left-associative"
 }
 template<typename... Ts>
 decltype(auto) fold_subD (Ts... args) {
-	printf("(Ln%d)  /%s/   Size of fu parampack: %lu\n",__LINE__,currFU, sizeof...(args));
+	fuPRmsg("Size of fu parampack: %zu\n", sizeof...(args));
 	return (args - ... - 100);           // binary right fold  ---  "right-associative"
 }
 

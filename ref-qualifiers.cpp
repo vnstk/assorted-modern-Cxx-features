@@ -91,15 +91,42 @@ void test__ref_qualif ()
 }
 
 
+
+struct Fnord {
+	void g ( )       &  { PRmsg("\tOload '\e[7m      & \e[0m', %s *this\n", figureValueCategoryOfExpr<decltype(*this)>()); }
+	void g ( )       && { PRmsg("\tOload '\e[7m      &&\e[0m', %s *this\n", figureValueCategoryOfExpr<decltype(*this)>()); }
+	void g ( ) const &  { PRmsg("\tOload '\e[7mconst & \e[0m', %s *this\n", figureValueCategoryOfExpr<decltype(*this)>()); }
+	void g ( ) const && { PRmsg("\tOload '\e[7mconst &&\e[0m', %s *this\n", figureValueCategoryOfExpr<decltype(*this)>()); }
+};
+Fnord mkFnord_a () { return Fnord(); }
+Fnord mkFnord_b () { return Fnord{}; }
+
+void test__valueCateg_of_implicit_object()
+{	PRenteredFU;
+	// This test was an utter bust.  Says *this is an lvalue _in_every_case_.
+	Fnord z;
+	SAYeval(  z.g()              );
+	SAYeval(  std::move(z).g()   );
+	SAYeval(  Fnord().g()        );
+	SAYeval(  Fnord{}.g()        );
+	SAYeval(  (new Fnord)->g()        );
+	SAYeval(  mkFnord_a().g()    );
+	SAYeval(  mkFnord_b().g()    );
+}
+
+
 int main()
 {
 #if VER_ge23 || defined(__cpp_explicit_this_parameter)
 	test__explicit_this();
 #endif
-
 	test__ref_qualif();
+	test__valueCateg_of_implicit_object();
 }
 
+/*
+C++11 introduced a little known feature called a ref-qualifier that allows us to overload a member function based on whether it is being called on an lvalue or an rvalue implicit object. 
+*/
 //		https://www.learncpp.com/cpp-tutorial/ref-qualifiers/
 //		https://en.cppreference.com/w/cpp/language/function#Function_declaration
 //		https://en.cppreference.com/w/cpp/language/member_functions

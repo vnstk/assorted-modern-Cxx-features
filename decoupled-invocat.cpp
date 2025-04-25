@@ -3,7 +3,6 @@
 #include <utility>
 #include <functional>
 #include <tuple>
-#include <vector>
 
 struct Foo {
 	unsigned _u{42U};
@@ -83,7 +82,7 @@ void test__move_only_function () {
 #if VER_ge23 || defined(__cpp_lib_move_only_function)
 	std::move_only_function<float(char)> fuC = std::move(lamb1) ;
 	PRwhat(fuC);
-	printf("(Ln%d)  invoked move_only_function, %f\n",__LINE__,fuC('W'));
+	PRmsg("invoked move_only_function, %f\n",__LINE__,fuC('W'));
 #endif
 }
 
@@ -154,10 +153,8 @@ void test__invoke__invoke_r__result_of (void)
 }
 
 
-int main () {
-	test__move_only_function();
-	test__std_apply();
-	test__invoke__invoke_r__result_of();
+void test__the_many_ways_to_bind()
+{	PRenteredFU;
 
 	// free fu
 	std::function<double(float)> fu3 = fgco0;
@@ -215,7 +212,7 @@ int main () {
 	PRwhat(fg7_bD);
 	PRwhat(                                        std::bind_front(fg7, 99U)  );
 	long ret7D = fg7_bD(9.9F, xb);
-	printf("(Ln%d) invoked fu obj created by bind_front, %ld\n", ret7D);
+	PRmsg("invoked fu obj created by bind_front, %ld\n", ret7D);
 
 	// Or auto,
 	auto fg7_bE = std::bind_front(fg7, 99U);
@@ -234,24 +231,19 @@ int main () {
 	const Foo& crxa = xa;
 	std::function<long(unsigned,float)> fg7_bG = std::bind_back(fg7, crxa);
 	long ret7G = fg7_bG(99U, 9.9F);
-	printf("(Ln%d) invoked fu obj created by bind_back, %ld\n", ret7G);
+	PRmsg("invoked fu obj created by bind_back, %ld\n", ret7G);
 #endif
-
-
 
 	// not_fn: a template to use if typing "!" is too hard ...?
 	std::function<int(Foo&,float)> yes__fu_obj = &Foo::f0p;
-	printf("(Ln%d) With !yes__fu_obj, %s\n",
-	        __LINE__,                !yes__fu_obj(xa,4.4) ? "qux" : "fnord");
+	PRmsg("With !yes__fu_obj, %s\n", !yes__fu_obj(xa,4.4) ? "qux" : "fnord");
 #if VER_ge17
 	std::function<int(Foo&,float)> not__fu_obj = std::not_fn(&Foo::f0p);
-	printf("(Ln%d) With not__fu_obj, %s\n",
-	       __LINE__,                  not__fu_obj(xa,4.4) ? "qux" : "fnord");
+	PRmsg("With not__fu_obj, %s\n", not__fu_obj(xa,4.4) ? "qux" : "fnord");
 	//
 	PRwhat(                                                  &Foo::f0p );
 	PRwhat(                                      std::not_fn(&Foo::f0p));
 #endif
-
 
 	// Remember pointer-to-member?  (BTW, they work for ivars too, not just membfuncs.)
 	float (Qux::* pqf)(unsigned) = nullptr;
@@ -272,14 +264,23 @@ int main () {
 	PRwhat(            std::mem_fn(&Qux::qfA)   );
 	float qfret4 = special_pqf(qone, 33U); // Is this better than "(qone.*pqf)(33U)"
 	//
-	printf("(Ln%d) qfret:\n\t'0=%.3f\n\t'1=%.3f\n\t'2=%.3f\n\t'3=%.3f\n\t'4=%.3f\n",
-	               __LINE__,qfret0, qfret1, qfret2, qfret3, qfret4);
+	PRmsg("qfret:\n\t'0=%.3f\n\t'1=%.3f\n\t'2=%.3f\n\t'3=%.3f\n\t'4=%.3f\n",
+	               qfret0, qfret1, qfret2, qfret3, qfret4);
 
 	// Y'all ain't seen nothin' yet!  Here's a func obj which does ...*nothing* !!
 #if VER_ge20
 	int fortyTwo{42};
 	std::identity doesNothing;
 	int also_fortyTwo = doesNothing(fortyTwo);
-	printf("(Ln%d)   fortyTwo=%d also_fortyTwo=%d\n",__LINE__, fortyTwo,also_fortyTwo);
+	PRmsg("fortyTwo=%d also_fortyTwo=%d\n",fortyTwo,also_fortyTwo);
 #endif
+}
+
+
+
+int main () {
+	test__move_only_function();
+	test__std_apply();
+	test__invoke__invoke_r__result_of();
+	test__the_many_ways_to_bind();
 }

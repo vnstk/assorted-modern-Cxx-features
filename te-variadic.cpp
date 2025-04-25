@@ -65,7 +65,7 @@ void prSizeof__a () {//base case
 }
 template<typename T, typename... Ts>             /// unary op.
 void prSizeof__a (T first, Ts... rest) {
-	fuPRmsg("sizeof is %lu\n", sizeof(first));
+	fuPRmsg("sizeof is %zu\n", sizeof(first));
 	prSizeof__a(rest ...);
 }
 
@@ -73,7 +73,7 @@ void prSizeof__a (T first, Ts... rest) {
 //NB: fu te oload *without* parampack is prioritized (preferred).
 template<typename T>
 void prSizeof__b (T justTheOne) {
-	fuPRmsg("sizeof is %lu\n", sizeof(justTheOne));
+	fuPRmsg("sizeof is %zu\n", sizeof(justTheOne));
 }
 template<typename T, typename... Ts>
 void prSizeof__b (T first, Ts... rest) {
@@ -159,14 +159,14 @@ void zoo (T t) {
 template<typename... Ts>
 void bar (std::tuple<Ts...> targs) {
 	size_t sz = sizeof...(Ts);
-	fuPRmsg("zzz nelems=%lu\n", sz); //fu==>   bar(std::tuple<_UTypes ...>) [with Ts = {int, int, int}]
+	fuPRmsg("zzz nelems=%zu\n", sz); //fu==>   bar(std::tuple<_UTypes ...>) [with Ts = {int, int, int}]
 	                                 //prints 3 correctly
 }
 
 template<typename T, size_t... Idx>
 void foo (void) {
 	size_t sz = sizeof...(Idx);
-	fuPRmsg("foo !!! nelems=%lu\n", sz); //fu==>
+	fuPRmsg("foo !!! nelems=%zu\n", sz); //fu==>
 //foo() [with T = long long unsigned int; long long unsigned int ...Idx = {0, 1, 2, 3, 4}]
 } //, when invoked as                                              foo<size_t,0,1,2,3,4>();
 
@@ -174,7 +174,7 @@ void foo (void) {
 template<typename T, size_t... Idx>
 void qux (std::integer_sequence<size_t, Idx...> intseq) {
 	size_t sz = sizeof...(Idx);
-	fuPRmsg("qux nelems=%lu\n", sz); //fu==>
+	fuPRmsg("qux nelems=%zu\n", sz); //fu==>
 //qux(std::integer_sequence<long long unsigned int, Idx ...>) [with T = long long unsigned int; long long unsigned int ...Idx = {0, 1, 2, 3, 4, 5, 6}]
 }
 
@@ -182,7 +182,7 @@ void qux (std::integer_sequence<size_t, Idx...> intseq) {
 
 template<typename... Ts>
 constexpr auto get_type_sizes() {
-	fuPRmsg("sizeof...(Ts) %lu\n", sizeof...(Ts));
+	fuPRmsg("sizeof...(Ts) %zu\n", sizeof...(Ts));
 	return std::array<std::size_t, sizeof...(Ts)>{sizeof(Ts)...};
 }    // Lists sizeof(Ti) for each arg's type Ti:  ^^^^^^^^^^^^^
 
@@ -191,7 +191,7 @@ constexpr auto get_type_sizes() {
 #if VER_ge17
 template<typename T1, typename... Ts>     //// fold expr used to *impl* a variadic fu te
 constexpr bool areAllArgTypesSame (T1, Ts...) {
-	fuPRmsg("|Ts| = %lu\n", sizeof...(Ts));
+	fuPRmsg("|Ts| = %zu\n", sizeof...(Ts));
 	return ( std::is_same_v<T1,Ts> && ... );
 } //                               ^^____________that's the binary op.
 #endif
@@ -205,6 +205,52 @@ void test__variadicFuTe_implemented_with_foldExpr () {
 	assert(b0 && !b1 && !b2);
 #endif
 }
+
+
+
+/* Variadic cla te, also using recursion.   ...?????
+*/
+template<typename T, typename... Ts>     ///1ry
+struct SortaTuple {
+	T                  _elem_car;
+	SortaTuple<Ts...>  _rest;
+	//
+	SortaTuple (T const& elem_car, Ts const&... rest) : _elem_car(elem_car), _rest(rest...) {
+		PRtyp(_elem_car);
+		PRtyp(_rest);
+		fuPRmsg("Cstructed 1ry; |rest|=%zu\n", sizeof...(rest));
+	}
+	constexpr int size() const { return 1 + _rest.size(); }
+};
+
+template<typename T>                      /// partial specializat
+struct SortaTuple<T> {
+	T                   _elem_theOnly;
+	//
+	SortaTuple (T const& elem_theOnly) : _elem_theOnly(elem_theOnly) {
+		PRtyp(_elem_theOnly);
+		fuPRlit("Cstructed base-case");
+	}
+	constexpr int size() const { return 1; }
+};
+
+void test__variadicClaTe()
+{	PRenteredFU;
+
+	SortaTuple<float,unsigned,long> sorta__f_u_l{7.7f, 7U, 7L};
+	SAYevalPRret(  sorta__f_u_l.size()  ,"%d"  );
+
+	PRtyp( sorta__f_u_l._elem_car ); // float
+	PRtyp( sorta__f_u_l._rest._elem_car ); // unsigned
+	PRtyp( sorta__f_u_l._rest._rest._elem_theOnly ); // long
+	long sevenL = sorta__f_u_l._rest._rest._elem_theOnly;
+	
+
+	auto sizes = get_type_sizes<char, int, long long>(); // expect 1+4+8=13
+	PRtyp(sizes);
+	SAYevalCHKret((std::accumulate(sizes.cbegin(), sizes.cend(), 0LLU)) ,"%llu",13LLU);
+}
+
 
 
 struct Xa {
@@ -229,52 +275,9 @@ void test__bases () {
 }
 
 
-/* Variadic cla te, also using recursion.   ...?????
-*/
-template<typename T, typename... Ts>     ///1ry
-struct SortaTuple {
-	T                  _elem_car;
-	SortaTuple<Ts...>  _rest;
-	//
-	SortaTuple (T const& elem_car, Ts const&... rest) : _elem_car(elem_car), _rest(rest...) {
-		PRtyp(_elem_car);
-		PRtyp(_rest);
-		fuPRmsg("Cstructed 1ry; |rest|=%lu\n", sizeof...(rest));
-	}
-	constexpr int size() const { return 1 + _rest.size(); }
-};
 
-template<typename T>                      /// partial specializat
-struct SortaTuple<T> {
-	T                   _elem_theOnly;
-	//
-	SortaTuple (T const& elem_theOnly) : _elem_theOnly(elem_theOnly) {
-		PRtyp(_elem_theOnly);
-		fuPRlit("Cstructed base-case");
-	}
-	constexpr int size() const { return 1; }
-};
-
-
-int main () {
-
-	SortaTuple<float,unsigned,long> sorta__f_u_l{7.7f, 7U, 7L};
-	SAYevalPRret(  sorta__f_u_l.size()  ,"%d"  );
-
-	PRtyp( sorta__f_u_l._elem_car ); // float
-	PRtyp( sorta__f_u_l._rest._elem_car ); // unsigned
-	PRtyp( sorta__f_u_l._rest._rest._elem_theOnly ); // long
-	long sevenL = sorta__f_u_l._rest._rest._elem_theOnly;
-
-	
-
-	auto sizes = get_type_sizes<char, int, long long>(); // expect 1+4+8=13
-	PRtyp(sizes);
-	SAYevalCHKret((std::accumulate(sizes.cbegin(), sizes.cend(), 0LLU)) ,"%llu",13LLU);
-
-	test__fsum();
-
-
+void test__index_sequence()
+{	PRenteredFU;
 	qoo<std::make_index_sequence<5>>();
 
 	foo<size_t,0,1,2,3,4>();
@@ -292,9 +295,16 @@ int main () {
 
 //	zoo<std::make_index_sequence<7>>();
 //	foo<std::make_index_sequence<7>>(std::make_index_sequence<7>{});
+}
 
+
+
+int main () {
+	test__fsum();
 	test__prSizeof();
 	test__prVal_seq_elems_byIndex();
 	test__variadicFuTe_implemented_with_foldExpr();
+	test__variadicClaTe();
 	test__bases();
+	test__index_sequence();
 }

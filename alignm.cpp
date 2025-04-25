@@ -28,16 +28,16 @@ struct alignas(double) Bar {
 
 
 int main () {
-	fprintf(stderr, "alignof(bool)=%lu , sizeof=%lu\n", alignof(bool), sizeof(bool));
-	fprintf(stderr, "alignof(Foo)=%lu , sizeof=%lu\n", alignof(Foo), sizeof(Foo));
-	fprintf(stderr, "alignof(Qux)=%lu , sizeof:%lu\n", alignof(Qux), sizeof(Qux));
+	fprintf(stderr, "alignof(bool)=%zu , sizeof=%zu\n", alignof(bool), sizeof(bool));
+	fprintf(stderr, "alignof(Foo)=%zu , sizeof=%zu\n", alignof(Foo), sizeof(Foo));
+	fprintf(stderr, "alignof(Qux)=%zu , sizeof:%zu\n", alignof(Qux), sizeof(Qux));
 
 	assert(32 == alignof(Qux));
 	assert(64 == alignof(Foo));
 
 	Foo fA;
 	Foo fB;
-	fprintf(stderr, "&fB-&fA = %ldn", (&fB - &fA));
+	fprintf(stderr, "&fB-&fA = %td\n", (&fB - &fA));
 	assert(64 == (&fB - &fA));
 	Qux qA;
 	Qux qB;

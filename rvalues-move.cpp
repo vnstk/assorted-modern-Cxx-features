@@ -73,7 +73,7 @@ static void dumpvec (const std::vector<TypP>& vec, const char *const tag) {
 	for (int i = 0; i < vec.size(); ++i) {
 		printf(" [%d]=%u", i, vec[i]._u);
 	}
-	printf(" }  //sz=%lu\n", vec.size());
+	printf(" }  //sz=%zu\n", vec.size());
 }
 
 
@@ -220,7 +220,7 @@ int main ()
 	veca.emplace_back(55U);
 	decltype(veca)::iterator itveca = veca.begin();
 	std::advance(itveca, 3);
-	printf("|veca|=%lu ; itveca->_u=%u\n", veca.size(), itveca->_u);
+	printf("|veca|=%zu ; itveca->_u=%u\n", veca.size(), itveca->_u);
 	dumpvec(veca, "veca");
 	//
 	std::vector<TypP> vecb;

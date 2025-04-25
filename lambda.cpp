@@ -95,9 +95,9 @@ auto fAddCommon_c = [] (auto x, auto y) { return x + y; };
 //
 // fAddCommon_b and fAddCommon_c should be utterly equiv !!
 
-
-int main () {
-
+void test__auto_retType()
+{	PRenteredFU;
+	//
 	auto retCommon_b = fAddCommon_b(42L, 3.14f);
 	PRtyp(retCommon_b);
 #if VER_ge17
@@ -105,7 +105,31 @@ int main () {
 	static_assert(std::is_same_v<decltype(retCommon_b), decltype(retCommon_c)>);
 	assert(retCommon_b == retCommon_c);
 #endif
+}
 
+
+void test__generic_lambda()
+{	PRenteredFU;
+#if VER_ge14           // generic lambda, style 1: "auto" as type of a param.
+	auto glambda = [](auto a, auto&& b) { return a < b; };
+	bool b = glambda(3, 3.14); // OK
+#endif
+}
+
+
+void test__static_call_operator()
+{	PRenteredFU;
+	// static operator() ... curious, what would be useful for?
+#if VER_ge23 || defined(__cpp_static_call_operator)
+	auto stalamb = [](Foo const& crFoo) static { return crFoo._x + 10; };
+	unsigned ret_stalamb = stalamb(xa);
+	printf("(Ln%d) ret_stalamb=%u\n", __LINE__,ret_stalamb);
+#endif
+}
+
+
+void test__capture()
+{	PRenteredFU;
 
 	S2 z;
 	const float zret = z.f(4242);
@@ -113,6 +137,25 @@ int main () {
 	Foo xa;
 	double doub{1.0001};
 
+#if VER_ge14  // capture *initializers*, use for just aliases and/or to modif.
+	[& rdoub = doub, zdoub = doub + 3.003]() {
+		rdoub += 2.002; printf("(Ln%d) rdoub=%f zdoub=%f\n",__LINE__,rdoub,zdoub);
+	}();
+
+	// Lets capture rvals
+	[z = std::move(xa)]() { printf("(Ln%d) xa._z=%u\n",__LINE__,z._x); }();
+
+#	if VER_ge17
+	// And, with as_const, can spare the inconvenience of creating a const-ref:
+	[z = std::as_const(xa)]() { printf("(Ln%d) xa._z=%u\n",__LINE__,z._x); }();
+#	endif
+
+#endif
+}
+
+
+void test__lambda_source_loc()
+{	PRenteredFU;
 #if VER_ge20
 	[]() {
 		std::source_location sloc = std::source_location::current();
@@ -132,37 +175,16 @@ int main () {
 	slamb(flambee);
 	slamb(flambee);
 #endif
+}
 
 
-#if VER_ge14  // capture *initializers*, use for just aliases and/or to modif.
-	[& rdoub = doub, zdoub = doub + 3.003]() {
-		rdoub += 2.002; printf("(Ln%d) rdoub=%f zdoub=%f\n",__LINE__,rdoub,zdoub);
-	}();
 
-	// Lets capture rvals
-	[z = std::move(xa)]() { printf("(Ln%d) xa._z=%u\n",__LINE__,z._x); }();
-
-#	if VER_ge17
-	// And, with as_const, can spare the inconvenience of creating a const-ref:
-	[z = std::as_const(xa)]() { printf("(Ln%d) xa._z=%u\n",__LINE__,z._x); }();
-#	endif
-
-#endif
-
-
-#if VER_ge14           // generic lambda, style 1: "auto" as type of a param.
-	auto glambda = [](auto a, auto&& b) { return a < b; };
-	bool b = glambda(3, 3.14); // OK
-#endif
-
-
-	// static operator() ... curious, what would be useful for?
-#if VER_ge23 || defined(__cpp_static_call_operator)
-	auto stalamb = [](Foo const& crFoo) static { return crFoo._x + 10; };
-	unsigned ret_stalamb = stalamb(xa);
-	printf("(Ln%d) ret_stalamb=%u\n", __LINE__,ret_stalamb);
-#endif
-
+int main () {
+	test__auto_retType();
+	test__lambda_source_loc();
+	test__capture();
+	test__generic_lambda();
+	test__static_call_operator();
 }
 
 // Moved constexpr lambdas examples into see constexpr.cpp

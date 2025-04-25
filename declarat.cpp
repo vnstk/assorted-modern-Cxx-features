@@ -18,9 +18,9 @@ struct Bar {
 	long _i;
 	float _f;
 	Bar(std::tuple<long  ,float> tu) : _i(std::get<0>(tu)), _f(std::get<1>(tu)) {
-		printf("(Ln%d) cstructed a Bar from a <long,float> pair; %ld/%.2f\n",__LINE__,_i,_f); }
+		fuPRmsg("cstructed a Bar from a <long,float> pair; %ld/%.2f\n",_i,_f); }
 	Bar(           long i,float f)   : _i(i),         _f(f)         {
-		printf("(Ln%d) cstructed a Bar from a long and a float; %ld/%.2f\n",__LINE__,_i,_f); }
+		fuPRmsg("cstructed a Bar from a long and a float; %ld/%.2f\n",_i,_f); }
 };
 
 struct Qux {
@@ -53,19 +53,63 @@ consteval float g02 (void) { return 3.5; }
 consteval int gi03 (int x) { return x * 2; }
 #endif
 
-float gretU = g00();
-float gretV = g01();
+
+
+void test__decltype_and_declval()
+{	PRenteredFU;
+
+	int iarg{42};
+	const int jarg{42};
+	constexpr int karg{42};
+
+	float gretA = g00();
+	float gretB = g01();
 #if VER_ge20
-float gretW = g02();
-
-int i_0{42};
-const int i_1{42};
-constexpr int i_2{42};
-
-//int giretX = gi03(i_0);        //Err, because "i_0" is not constant.
-int giretY = gi03(i_1);
-int giretZ = gi03(i_2);
+	float gretC = g02();
+//	int giretXi = gi03(iarg);        // Err, because iarg is not cpiletime-const.
+	int giretXj = gi03(jarg);
+	int giretXk = gi03(karg);
 #endif
+
+	const float gretD = g00();
+	const float gretE = g01();
+#if VER_ge20
+	const float gretF = g02();
+#endif
+
+//	constexpr float gretP = g00();    //Err, because g00 can't run at cpiletime.
+	constexpr float gretQ = g01();
+#if VER_ge20
+	constexpr float gretR = g02();
+#endif
+
+
+	float                          fffA; // Old-fashioned
+#if VER_ge20
+	decltype( []{return 3.14f;} )  fffB; // New-fangled
+#endif
+	// Less silly:
+	decltype(conjure_a_float)      ffC; // Note, conjure_a_float() was not actually invoked.
+
+
+	int     xval{42};
+	int& refxval = xval;
+#if 0 //TODO !
+#if VER_ge14
+//	auto f00_ret = f00(refxval);
+	static_assert(std::is_same<int , decltype(f00)>());
+//	static_assert(std::is_same<int , decltype(f00_ret)>());
+	//
+//	auto f01_ret = f01(refxval);
+//	PRwhat(f01_ret);
+//	PRtyp(f01_ret);
+	static_assert(std::is_same<int&, decltype(f01)>());
+#endif
+#endif
+}
+
+
+
 
 
 /*
@@ -141,74 +185,8 @@ void test__piecewise_construct()
 }
 
 
-int main ()
-{
-	test__structured_binding();
-	test__piecewise_construct();
-
-	int iarg{42};
-	const int jarg{42};
-	constexpr int karg{42};
-
-	float gretA = g00();
-	float gretB = g01();
-#if VER_ge20
-	float gretC = g02();
-//	int giretXi = gi03(iarg);        // Err, because iarg is not cpiletime-const.
-	int giretXj = gi03(jarg);
-	int giretXk = gi03(karg);
-#endif
-
-	const float gretD = g00();
-	const float gretE = g01();
-#if VER_ge20
-	const float gretF = g02();
-#endif
-
-//	constexpr float gretP = g00();    //Err, because g00 can't run at cpiletime.
-	constexpr float gretQ = g01();
-#if VER_ge20
-	constexpr float gretR = g02();
-#endif
-
-
-	float                          fffA; // Old-fashioned
-#if VER_ge20
-	decltype( []{return 3.14f;} )  fffB; // New-fangled
-#endif
-	// Less silly:
-	decltype(conjure_a_float)      ffC; // Note, conjure_a_float() was not actually invoked.
-
-
-	int     xval{42};
-	int& refxval = xval;
-#if 0 //TODO !
-#if VER_ge14
-//	auto f00_ret = f00(refxval);
-	static_assert(std::is_same<int , decltype(f00)>());
-//	static_assert(std::is_same<int , decltype(f00_ret)>());
-	//
-//	auto f01_ret = f01(refxval);
-//	PRwhat(f01_ret);
-//	PRtyp(f01_ret);
-	static_assert(std::is_same<int&, decltype(f01)>());
-#endif
-#endif
-
-
-	Foo x0 = {3.14f, 0xFA};
-
-#if VER_ge11
-	Foo x1{   3.14f, 0xFA};
-#endif
-
-#if VER_ge20 // Newer-fangled: must still be in decl order.
-	Foo x2{ ._f = 3.14f , ._hhu = 0xFA };
-	Foo x3={ ._f = 3.14f , ._hhu = 0xFA };
-	Foo x4{ ._f{3.14f} , ._hhu{0xFA} };
-	Foo x5={ ._f{3.14f} , ._hhu{0xFA} };
-#endif
-
+void test__in_place()
+{	PRenteredFU;
 #if VER_ge17
 	// std::in_place, use with optional
 	//
@@ -226,11 +204,39 @@ int main ()
     std::variant<std::string,float> v0(std::in_place_type<std::string>, 3, 'A');
 		// Similarly, any
     std::any                        a0(std::in_place_type<std::string>, 3, 'A');
-
 	// With std::variant, can alternatively specify which type desired, with in_place_index.
     std::variant<float,std::vector<bool>,std::string,unsigned> v1(std::in_place_index<2>, 33, 'Z');
 	// In list of poss types, std::string is at offset 2.  (I.e., is 3rd.)
 	printf("(Ln%d)  v1=\"%s\"\n",__LINE__,std::get<2>(v1).c_str());
 #endif
+}
 
+
+//  see https://en.cppreference.com/w/cpp/language/aggregate_initialization
+void test__aggregate_initialization()
+{	PRenteredFU;
+
+	Foo x0 = {3.14f, 0xFA};
+
+#if VER_ge11
+	Foo x1{   3.14f, 0xFA};
+#endif
+
+#if VER_ge20 // Newer-fangled: must still be in decl order.
+	Foo x2{ ._f = 3.14f , ._hhu = 0xFA };
+	Foo x3={ ._f = 3.14f , ._hhu = 0xFA };
+	Foo x4{ ._f{3.14f} , ._hhu{0xFA} };
+	Foo x5={ ._f{3.14f} , ._hhu{0xFA} };
+#endif
+}
+
+
+
+int main ()
+{
+	test__decltype_and_declval();
+	test__structured_binding();
+	test__piecewise_construct();
+	test__in_place();
+	test__aggregate_initialization();
 }

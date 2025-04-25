@@ -170,11 +170,11 @@ void test__shared_ptr__aliasingCtor ()
 
 	{
 		std::shared_ptr<Bar> shab = std::make_shared<Bar>(17U, "Make_shared");
-		PRmsg("Ini, shab.use_count()=%zu ; shab.get()=%p\n", shab.use_count(), shab.get());
+		PRmsg("Ini, shab.use_count()=%ld ; shab.get()=%p\n", shab.use_count(), shab.get());
 		//
 		std::shared_ptr<Foo> shaf(/*shares ownership info with:*/ shab, 
 		                          /*holds unrelated unmanaged ptr:*/ &shab->_foo);
-		PRmsg("Now, shab.use_count()=%zu ; shaf.get()=%p\n", shab.use_count(), shaf.get());
+		PRmsg("Now, shab.use_count()=%ld ; shaf.get()=%p\n", shab.use_count(), shaf.get());
 		//
 		// Expect false, because they're sharing ownership info --- right??
 		SAYevalCHKretBOOL(   shab.owner_before(shaf)   ,false);
@@ -188,12 +188,12 @@ void test__shared_ptr__aliasingCtor ()
 	*/
 	{
 		std::shared_ptr<Bar> shab = std::make_shared<Bar>(17U, "make_shared");
-		PRmsg("Ini, shab.use_count()=%zu ; shab.get()=%p\n", shab.use_count(), shab.get());
+		PRmsg("Ini, shab.use_count()=%ld ; shab.get()=%p\n", shab.use_count(), shab.get());
 		//
 		Foo *p_shab_foo = &shab->_foo;
 		std::shared_ptr<Foo> shaf(/*shares ownership info with:*/ std::move(shab), 
 		                          /*holds unrelated unmanaged ptr:*/ p_shab_foo);
-		PRmsg("Now, shaf.use_count()=%zu ; shaf.get()=%p\n", shaf.use_count(), shaf.get());
+		PRmsg("Now, shaf.use_count()=%ld ; shaf.get()=%p\n", shaf.use_count(), shaf.get());
 	}
 #endif
 }
@@ -217,10 +217,10 @@ void test__enable_shared_from_this()
 	std::unique_ptr<Qux> uptr_q2( new Qux(66.6F) );
 
 	std::shared_ptr<Qux> shaA(rawp_q0);
-	PRmsg("shaA.use_count=%zu shaA.get()=%p\n", shaA.use_count(), shaA.get());
+	PRmsg("shaA.use_count=%ld shaA.get()=%p\n", shaA.use_count(), shaA.get());
 
 	std::shared_ptr<Qux> shaB = rawp_q0->shared_from_this();
-	PRmsg("shaA.use_count=%zu shaB.get()=%p\n", shaB.use_count(), shaA.get());
+	PRmsg("shaA.use_count=%ld shaB.get()=%p\n", shaB.use_count(), shaA.get());
 
 #if NULL // Do not do either of these!
 	std::shared_ptr<Qux> shaBadIdeaOne = q1.shared_from_this(); //==> a smashed stack
