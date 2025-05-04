@@ -104,7 +104,201 @@ void test__EBO() // Empty Base Optimizat
 	SAYevalCHKretBOOL( sizeof(MerelyQux)==sizeof(QuxA) ,true);
 };
 
+
+struct KlasU {
+	char _ch{'Z'};
+	KlasU () { fuPRlit("called yes-dflt ctor."); }
+	KlasU (char ch) : _ch(ch) { fuPRlit("called non-dflt ctor."); }
+};
+
+void test__invoking_dflt_ctor()
+{	PRenteredFU;
+	SAYeval( KlasU kc0 );
+	SAYeval( KlasU kc1{} );
+#if 0
+	// Bad idea!!!  Gets disambiguated as a _func_declarat_.
+	SAYeval( KlasU kc2() );
+#endif
+	// Parsed all right, but avoidable copy.
+	SAYeval( KlasU kc3 = KlasU() );
+}
+
+
+struct KlasD {
+private:
+	char _ch{'Z'};
+};
+struct KlasE {
+public:
+	char _ch{'Z'};
+};
+struct KlasF {
+private:
+	static char _ch;
+};
+struct KlasG {
+public:
+	static char _ch;
+};
+
+char KlasF::_ch = 'Z';
+char KlasG::_ch = 'Z';
+
+// If a class has private non-static datamemb, we need ctor to initialize it. ---Stroustrup
+void test__when_ctor_required()
+{	PRenteredFU;
+	KlasD kd; // Apparently, no we don't. ---reality
+	KlasE ke;
+	KlasF kf;
+	KlasG kg;
+}
+
+
+struct BaseA {
+	char _ch;
+	BaseA () : _ch('Z') { }
+};
+struct BaseB {
+	char _ch;
+	BaseB (char ch) : _ch(ch) {   fuPRmsg("'char' ctor, _ch='%c'\n", _ch);   }
+};
+
+struct KlasH {
+	char _ch;
+	KlasH (char ch) : _ch(ch) {   fuPRmsg("_ch='%c'\n", _ch);   }
+	// Deleg to another ctor of same class.
+	KlasH (char const *s) : KlasH(s[0]) {   fuPRmsg("_ch='%c'\n", _ch);   }
+};
+struct KlasH_WithDfltCtor { // Same as KlasH, but with defaulted dflt ctor.
+	char _ch;
+	KlasH_WithDfltCtor () =default;
+	KlasH_WithDfltCtor (char ch) : _ch(ch) {}
+	KlasH_WithDfltCtor (char const *s) : KlasH_WithDfltCtor(s[0]) {}
+};
+
+struct KlasJ : BaseB {
+	// Deleg to ctor of a base class, { ch }
+	KlasJ (char ch) : BaseB{ch} {   fuPRlit("done delegating");   }
+};
+struct KlasK : BaseB {
+	// Deleg to ctor of a base class, ( ch )
+	KlasK (char ch) : BaseB(ch) {   fuPRlit("done delegating");   }
+};
+
+struct KlasP : BaseA { 
+//must initializ a base explciitly, unless said base has dflt ctor
+};
+
+void test__delegating_ctors()
+{	PRenteredFU;
+#if 0
+	SAYeval(  KlasH kh0                 ); // Nnnnope: lacks dflt ctor.
+#endif
+	SAYeval(  KlasH_WithDfltCtor kh0    ); // Have dflt ctor, will travel.
+	//
+	SAYeval(  KlasH kh1{'Z'}            );
+	SAYeval(  KlasH kh2{"Zounds!!!"}    );
+	SAYeval(  KlasJ kj{'Z'}             );
+	SAYeval(  KlasK kk{'Z'}             );
+	SAYeval(  KlasP kp                  );
+}
+
+
+struct BaseC {
+	BaseC() =default;
+public:
+	char  _cha{'Z'};
+	BaseC (char  x) : _cha(x) { fuPRmsg("_cha=%c _flo=%.2f _sho=%hd\n",_cha,_flo,_sho); }
+protected:
+	float _flo{3.14};
+	BaseC (float x) : _flo(x) { fuPRmsg("_cha=%c _flo=%.2f _sho=%hd\n",_cha,_flo,_sho); }
+private:
+	short _sho{-42};
+	BaseC (short x) : _sho(x) { fuPRmsg("_cha=%c _flo=%.2f _sho=%hd\n",_cha,_flo,_sho); }
+};
+
+struct KlasQ : BaseC {
+#if 0
+	KlasQ (char cha) : _cha(cha) { }
+	// Mayn't initializ a base's memb, howsoe'er public be it.
+#endif
+	KlasQ (char cha) : BaseC(cha) {   fuPRlit("der-class ctor");   }
+	//==========================================//
+	// protected ctor accessible
+	KlasQ (char cha,char) : BaseC(5.67F) {   fuPRlit("der-class ctor");   }
+	//==========================================//
+#if 0
+	// private ctor not accessible
+	KlasQ (char cha,char,char) : BaseC((short)-33) {   fuPRlit("der-class ctor");   }
+#endif
+};
+
+struct KlasM : BaseC {
+#if 0
+	KlasM (float flo) : _flo(flo) {   fuPRlit("der-class ctor, done.");   }
+#endif
+	KlasM (float flo) {   _flo=flo;   fuPRlit("der-class ctor, done.");   }
+	void f (float flo) { _flo=flo; }
+};
+struct KlasMM : BaseC {
+	using BaseC::_flo;
+#if 0
+	KlasMM (float flo) : _flo(flo) {   fuPRlit("der-class ctor, done.");   }
+#endif
+	// We *are* able to mutate _flo from a ctor --- just not through memb init list.
+	KlasMM (float flo) {   _flo=flo;   fuPRlit("der-class ctor, done.");   }
+	void f (float flo) { _flo=flo; }
+};
+struct KlasMMM : BaseC {
+	using BaseC::BaseC;
+	KlasMMM (float flo) : BaseC(flo) {   fuPRlit("der-class ctor, done.");   }
+};
+
+struct KlasNN : BaseC {
+#if 0   // _sho is so private it's illegal to even mention it!
+	using BaseC::_sho;
+	    // Needless to say, actually doing anything to _sho is forbidden.
+#endif
+};
+struct KlasNNN : BaseC {
+	using BaseC::BaseC;
+#if 0   // Alas, the "using" magic doesn't extend to private datamembs of a base.
+	KlasNNN (short sho) : BaseC(sho) {   fuPRlit("der-class ctor, done.");   }
+	    // Needless to say, actually doing anything to _sho is forbidden.
+#endif
+};
+
+
+void test__effect_of_the_using_keyword()
+{	PRenteredFU;
+	KlasM   km(1.2F);
+	KlasMM  kmm(11.2F);
+	KlasMMM kmmm(111.2F);
+	BaseC& bkm   = km;
+	BaseC& bkmm  = kmm;
+	BaseC& bkmmm = kmmm;
+#if 0
+	bkm._flo = 3.4F;
+	bkmm._flo = 33.4F;
+	bkmmm._flo = 333.4F;
+
+	km._flo = 5.6F;
+#endif
+	// Behold the glorious achievement of "using" when applied to a non-ctor memb of a base!!
+	// Yea, we may mutate it as if 'twere public, though it be protected.
+	kmm._flo = 55.6F;
+#if 0
+	kmmm._flo = 555.6F;
+#endif
+}
+
+
+
 int main(){
+	test__effect_of_the_using_keyword();
+	test__delegating_ctors();
+	test__when_ctor_required();
+	test__invoking_dflt_ctor();
 	test__EBO();
 	test__preferring_inilist_ctor();
 	test__brace_initializ_of_POD();
