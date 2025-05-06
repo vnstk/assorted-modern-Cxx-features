@@ -63,6 +63,7 @@
 
 
 #include <stdio.h>
+#include <string.h>
 #include <stdint.h>
 #include <assert.h>
 
@@ -99,6 +100,9 @@
 //
 #define SAYevalCHKret(z,retPrintfFmt,expectedRetval) \
 	printf("/Ln%d/  Chk that \"\e[36m" #z "\e[0m\" evals to \"\e[1m" retPrintfFmt "\e[0m\"\n",  __LINE__, (expectedRetval)); assert((expectedRetval) == (z))
+
+#define SAYevalCHKretCSTR(z,expectedRetval) \
+	printf("/Ln%d/  Chk that \"\e[36m" #z "\e[0m\" evals to \"\e[1m%s\e[0m\"\n",  __LINE__, (expectedRetval)); assert(!strcmp( (z),(expectedRetval)))
 //
 #define SAYevalCHKretBOOL(z,expectedRetval) \
 	printf("/Ln%d/  Chk that \"\e[36m" #z "\e[0m\" evals to \e[1m%s\e[0m\n",  __LINE__, (expectedRetval)?"true":"false"); assert((expectedRetval) == (z))
@@ -111,21 +115,37 @@
 #include <functional> // For std::is_bind_expression
 //
 #define PRwhat(z) \
-	printf("/Ln%d/  Expr \"\e[36m" #z "\e[0m\" is\e[32;3m%s%s%s%s%s%s%s%s%s%s%s%s\e[0m; sizeof=%zu alignof=%llu.\n",  __LINE__   \
+	printf("/Ln%d/  Expr \"\e[36m" #z "\e[0m\" is\e[32;3m%s%s%s"\
+"%s%s"\
+"%s%s%s"\
+"%s%s%s%s"\
+"%s%s%s\e[0m; sizeof=%zu alignof=%llu.\n",  __LINE__   \
 , std::is_const<decltype(z)>::value ? " const" : ""   \
 , std::is_array<decltype(z)>::value ? " array" : ""   \
+, std::is_member_pointer<decltype(z)>::value ? " membptr" : ""   \
+\
 , std::is_pointer<decltype(z)>::value ? " ptr" : ""   \
+, std::conjunction<   \
+	std::is_pointer<decltype(z)>,  \
+	std::is_const<typename std::remove_pointer<decltype(z)>::type> >::value ? "-to-const" : ""  \
+\
 , std::is_lvalue_reference<decltype(z)>::value ? " lvalRef" : ""   \
 , std::is_rvalue_reference<decltype(z)>::value ? " rvalRef" : ""   \
+, std::conjunction<   \
+	std::is_reference<decltype(z)>,  \
+	std::is_const<typename std::remove_reference<decltype(z)>::type> >::value ? "-to-const" : ""  \
+\
 , (std::is_enum<decltype(z)>::value ) ? " enum" : ""   \
 , (std::is_union<decltype(z)>::value ) ? " union" : ""   \
 , (std::is_class<decltype(z)>::value ) ? " class" : ""   \
 , std::is_fundamental<decltype(z)>::value ? " funda" : ""   \
+\
 , std::is_bind_expression<decltype(z)>::value ? " bindExpr" : ""   \
 , std::is_function<decltype(z)>::value ? " func" : ""   \
 , (std::is_object<decltype(z)>::value && ! std::is_pointer<decltype(z)>::value && ! std::is_array<decltype(z)>::value) ? " obj" : ""   \
 , sizeof(decltype(z)), alignof(decltype(z)) \
 )
+
 
 #define PRaboutTYP(z) \
 	printf("/Ln%d/  Type of expr \"\e[36m" #z "\e[0m\" has properties"  \

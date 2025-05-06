@@ -76,63 +76,6 @@ void test__declval()
 }
 
 
-int&  ret_lvalue(); // Needn't define.
-int&& ret_xvalue();
-int   ret_prvalue();
-
-void f0 (int x) {
-	PRexprValueCateg(x);
-}
-void f1 (int const x) {
-	PRexprValueCateg(x);
-}
-void f2 (int& x) {
-	PRexprValueCateg(x);
-}
-void f3 (int const& x) {
-	PRexprValueCateg(x);
-}
-void f4 (int&& x) {
-	PRexprValueCateg(x);
-}
-void f5 (int const&& x) {
-	PRexprValueCateg(x);
-}
-template<typename T>
-void f6 (T&& x) {
-	PRexprValueCateg(x);
-}
-
-void test__valueCategories()
-{	PRenteredFU;
-		int iA{42};
-		const int iB{42};
-		constexpr int iC{42};
-		int& riA = iA;
-		const int& riB = iB;
-		SAYeval(  f0(iA)  );
-		SAYeval(  f1(iA)  );
-		SAYeval(  f0(iB)  );
-		SAYeval(  f1(iB)  );
-		SAYeval(  f2(riA)  );
-		SAYeval(  f3(riB)  );
-		SAYeval(  f4(42)  );
-		SAYeval(  f4(int{42})  );
-		SAYeval(  f4(std::move(int{42}))  );
-		int iD{42};
-		SAYeval(  f4(std::move(iD))  );
-	//	SAYeval(  f4(iC)  );   //Err,  cannot bind rvalue reference of type 'int&&' to lvalue of type 'const int'
-		SAYeval(  f6(iA)  );
-		SAYeval(  f6(iB)  );
-		SAYeval(  f6(riA)  );
-		SAYeval(  f6(std::move(riA))  );
-		SAYeval(  f6(riB)  );
-		SAYeval(  f6(std::move(iA))  );
-		SAYeval(  f6(42)  );
-		SAYeval(  f6(std::move(riB))  );
-}
-
-
 /* How to make your own ty trai; 1ry and then full specializats.
 */
 template <typename T>
@@ -305,8 +248,6 @@ int main()
 
 	test__detecting_members();
 	test__myOwn_ty_trai();
-
-	test__valueCategories();
 
 	float pi0 = 3.14159F;
 	const float pi1 = 3.14159F;
