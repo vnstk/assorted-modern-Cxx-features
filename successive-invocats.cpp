@@ -1,11 +1,26 @@
 /*   (c)2024 Vainstein K.   */
 #include "common.h"
-#include <stdlib.h> // for srand() and rand()
+#include "simple-timer.h"
 #include <algorithm>
 #include <list>
 #include <numeric> // Part of the algorithms lib is in <numeric> and not in <algorithm>.
 #include <string>
 #include <vector>
+#include <execution>
+
+
+
+using vectC_t = std::vector<char>;
+
+void pr_vectChar (vectC_t const& cont, const char *tag, int callerLn) {
+    printf("(Ln%d)  \e[33;3m%18s\e[0m --- {", callerLn, tag);
+    for (int i = 0; i < cont.size(); ++i) {
+		printf("   %c", cont[i]);
+    }
+    printf("  }  // sz=%zu cap=%zu.\n", cont.size(), cont.capacity());
+}
+#define PR_vectChar(cont,tag) pr_vectChar((cont),(tag),__LINE__)
+#define INITco vectC_t co{'q','w','e','r','t','y','b','u','n','n','i','e','s'}
 
 
 struct NumStr {
@@ -17,12 +32,34 @@ struct NumStr {
 	std::string _str;
 	NumStr (unsigned num, std::string&& str) noexcept
 		: _num(num), _str(std::move(str)) {}
+	NumStr (std::string const& str) noexcept : _num(0U), _str(str) {}
 };
 NumStr foobarize (NumStr const& a, NumStr const& b) {
 	char buf[128];
 	sprintf(buf, "%s%u|%u%s", a._str.c_str(), a._num, b._num, b._str.c_str());
 	return NumStr(a._num * b._num, std::string(buf));
 }
+
+void pr_vectNumStr (std::vector<NumStr> const& vec, const char *tag, int callerLn) {
+	std::string s{"{"};
+	s.reserve(vec.size() * 4 + 2);
+	char buf[32];
+	for (NumStr const& elem : vec) {
+		sprintf(buf, " %s%02u", elem._str.c_str(), elem._num);
+		s += buf;
+	}
+	s += " }";
+    printf("(Ln%d)  \e[33;3m%18s\e[0m --- %s\n", callerLn, tag, s.c_str());
+}
+#define PR_vectNumStr(cont,tag) pr_vectNumStr((cont),(tag),__LINE__)
+
+struct RecordVisitOrder {
+	unsigned _counter{0U};
+	void operator() (NumStr& x) noexcept { x._num = ++_counter; }
+	// Making it noexcept didn't remove the need to enable exceptions so as
+	// to catch bad_alloc from an exception_policy-using oload.
+};
+
 
 struct CatAdder {
 	std::string _s;
@@ -35,104 +72,56 @@ struct CatAdder {
 };
 
 
-/* Fold expressions: apply binary operator to all elems of a parampack.
+void pr_vectStr (std::vector<std::string> const& vec, const char *tag, int callerLn) {
+	std::string s;
+	s.reserve(vec.size() * 10 + 2);
+	char buf[32];
+	for (std::string const& elem : vec) {
+		sprintf(buf, "  '%s'", elem.c_str());
+		s += buf;
+	}
+    printf("(Ln%d)  \e[33;3m%18s\e[0m --- {%s  }  sz=%zu cap=%zu\n",
+	       callerLn, tag, s.c_str(), vec.size(), vec.capacity());
+}
+
+/*
+	o	for_each discards retvals of UnaryOp.
+	o	transform stores each UnaryOp retval into corresponding output slot.
+	o	transform_reduce hands the UnaryOp retvals to the BinaryOps of the "reduce" paert.
 */
-#if VER_ge17
-template<typename... Ts> // <--- te params
-decltype(auto) fold_subA (Ts... args) { // <--- fu params
-	fuPRmsg("Size of te parampack: %zu\n", sizeof...(Ts));
-	fuPRmsg("Size of fu parampack: %zu\n", sizeof...(args));
-	return (... - args);                 // unary left fold   ---  "left-associative"
-}
-template<typename... Ts>
-decltype(auto) fold_subB (Ts... args) {
-	return (args - ...);                 // unary right fold  ---  "right-associative"
-}
-template<typename... Ts>
-decltype(auto) fold_subC (Ts... args) {
-	fuPRmsg("Size of te parampack: %zu\n", sizeof...(Ts));
-	return (100 - ... - args);           // binary left fold  ---   "left-associative"
-}
-template<typename... Ts>
-decltype(auto) fold_subD (Ts... args) {
-	fuPRmsg("Size of fu parampack: %zu\n", sizeof...(args));
-	return (args - ... - 100);           // binary right fold  ---  "right-associative"
-}
-
-template<typename... Ts>
-decltype(auto) fold_lshiftB (Ts... args) {
-	return (args << ...);                // unary right fold
-}
-template<typename... Ts>
-decltype(auto) fold_lshiftD (Ts... args) {
-	return (args << ... << 3LU);         // binary right fold
-}
-
-template<typename... Ts>
-decltype(auto) fold_addC (Ts... args) {
-	return (0 + ... + args);
-}
-#endif
-
-
-void test__foldExprs () {
-	PRenteredFU;
-#if VER_ge17
-	SAYevalPRret(  fold_subA(20,7,9)  ,"%d");   //   (20-7)-9
-	SAYevalPRret(  fold_subB(20,7,9)  ,"%d");   //    20-(7-9)
-	SAYevalPRret(  fold_subC(20,7,9)  ,"%d");   //   ((100-20)-7)-9
-	SAYevalPRret(  fold_subD(20,7,9)  ,"%d");   //   20-(7-(9-100))
-	//
-	SAYevalPRret(  fold_lshiftB(7LLU,5LLU,3LLU)   ,"%llu");   //     7<<(5<<3)
-	SAYevalPRret(  fold_lshiftD(7LLU,5LLU)        ,"%llu");   //     7<<(5<<3)
-	static_assert(std::is_same_v<decltype(fold_lshiftB(7LLU,3LLU)), long long unsigned>);
-	//
-	// Big advantage of the binary folds is won't barf if called with *no* args:
-	SAYevalCHKret(  fold_addC()  ,"%d", 0);
-	// If binary fold with initial-val clause called with no args, get back the initial-val.
-	SAYevalCHKret(  fold_subC()  ,"%d", 100);
-	SAYevalCHKret(  fold_subD()  ,"%d", 100);/* Ret type depends on how initial-val literal
-	                                             was written; if "100L", would return long. */
-	//
-	// If a unary fold called with just *one* arg, ought to simply return it:
-	SAYevalCHKret(  fold_subA(42)  ,"%d", 42);
-	SAYevalCHKret(  fold_subB(42)  ,"%d", 42);
-#endif
-}
-
-int mk_pseudorandomInt ()
-{
-    static bool haveSeeded{false};
-    if (! haveSeeded) {
-        srand(42U);
-        haveSeeded = true;
-    }
-	return rand();
-}
-
-void test__generate ()
-{	PRenteredFU;
-//
-	std::vector<int> numbers(20); // All dflt-initialized to 0.
-	auto isZero = [](int x) -> bool { return 0==x; };
-	SAYevalCHKretBOOL(   std::all_of(numbers.cbegin(), numbers.cend(), isZero)   ,true);
-	std::generate(numbers.begin(), numbers.end(), mk_pseudorandomInt);
-	SAYevalCHKretBOOL(   std::none_of(numbers.cbegin(), numbers.cend(), isZero)   ,true);
-//
-	std::vector<std::string> strings{"aa", "bb", "cc", "dd", "ee"};
-	assert("cc" == strings[2]);
-#if VER_ge17
-	decltype(strings)::const_iterator cit =
-		std::generate_n(strings.begin(), 3U,
-		                []()->std::string { return std::to_string(mk_pseudorandomInt()); });
-	assert("dd" == *cit);
-	assert("cc" != strings[2]);
-#endif
-	PRlit(strings[2].c_str());
-}
 
 void test__for_each ()
 {	PRenteredFU;
+#if 0
+	// Generated with           echo {'"'{a..z}'"'},
+	std::vector<NumStr> ini_vec{ {"a"}, {"b"}, {"c"}, {"d"}, {"e"}, {"f"}, {"g"}, {"h"}, {"i"}, {"j"}, {"k"}, {"l"}, {"m"}, {"n"}, {"o"}, {"p"}, {"q"}, {"r"}, {"s"}, {"t"}, {"u"}, {"v"}, {"w"}, {"x"}, {"y"}, {"z"}, };
+#endif
+	// Generated with           for i in {0..99}; do echo -n '{"x"}, '; done
+	std::vector<NumStr> ini_vec{ {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, {"x"}, };
+
+	std::vector<NumStr> vec0{ini_vec};
+	std::for_each(vec0.begin(), vec0.end(), RecordVisitOrder{});
+	// Expect evidence of visits done in any old order, seq 1 through 150.
+	PR_vectNumStr(vec0, "after for_each w/o an execution_policy");
+
+	std::vector<NumStr> vec1{ini_vec};
+	unsigned localCounter{0U};
+	std::for_each(vec1.begin(), vec1.end(), [&localCounter](NumStr& x){x._num = ++localCounter; });
+	// Expect evidence of visits done in any old order, seq 1 through 150.
+	PR_vectNumStr(vec0, "after for_each w/o an execution_policy");
+
+#if 0
+//If enable this section, will need to compile with    -fexceptions
+
+	Timer t{"for_each with par execution_policy"};
+	std::vector<NumStr> vec1{ini_vec};
+	std::for_each(std::execution::par, vec1.begin(), vec1.end(), RecordVisitOrder{});
+	// Expect evidence of visits done in any old order, seq 1 through M and 1 through N; where M+N=26.
+	PR_vectNumStr(vec0, "after for_each with the par execution_policy");
+#endif
+
+	// Well it *should've*.
+#if 0
 //
 	std::vector<unsigned> vuX{5,7,9};
 	std::for_each(vuX.begin(), vuX.end(), [](unsigned& u){ u+=10U; });
@@ -151,21 +140,7 @@ void test__for_each ()
 	assert(1111U == *citZ);
 	assert(19 == vuZ[2]);
 #endif
-}
-
-void test__transform ()
-{	PRenteredFU;
-//
-	std::vector<unsigned> vu{5,7,9};
-	std::list<unsigned> liu{103, 1003, 10003, 100003};
-	decltype(liu)::const_iterator third = std::next(liu.cbegin() ,2U);
-	assert(10003 == *third);
-	decltype(liu)::const_iterator firstNontransformed =
-		std::transform(vu.cbegin(), vu.cend(), liu.begin(), [](unsigned u){ return u+10; });
-	assert(100003 == *firstNontransformed);
-	assert(10003 != *third);
-	assert(19    == *third);
-	assert(9 == vu[2]); // Confirm that input range is untouched --- unlike with for_each.
+#endif
 }
 
 void test__accumulate ()
@@ -180,7 +155,7 @@ void test__accumulate ()
 	std::vector<std::string> vs{"aa","bb","cc"};
 	std::string cat = std::accumulate(vs.cbegin(), vs.cend(), std::string("dd"));
 	PRlit(cat.c_str());
-	assert(std::string("ddaabbcc") == cat); // Result is *not* "aabbccdd"
+	assert(std::string("ddaabbcc") == cat);
 //
 	std::vector<NumStr> vns{ {5,"aa"} , {7,"bb"} , {9,"cc"} };
 	const NumStr total = std::accumulate(vns.cbegin(), vns.cend(), NumStr{3,"dd"} ,foobarize);
@@ -188,7 +163,7 @@ void test__accumulate ()
 	// Prints  str="dd3|5aa15|7bb105|9cc"
 }
 
-void test__reduce () // How... is this different from accumulate??
+void test__reduce () // std::reduce similar to std::accumulate, except out of order
 {	PRenteredFU;
 #ifdef VER_ge17
 	std::vector<unsigned> vu{5,7,9};
@@ -210,12 +185,101 @@ void test__reduce () // How... is this different from accumulate??
 #endif
 }
 
+void test__transform ()
+{	PRenteredFU;
+//
+	std::vector<unsigned> vu{5,7,9};
+	std::list<unsigned> liu{103, 1003, 10003, 100003};
+	decltype(liu)::const_iterator third = std::next(liu.cbegin() ,2U);
+	assert(10003 == *third);
+	decltype(liu)::const_iterator firstNontransformed =
+		std::transform(vu.cbegin(), vu.cend(), liu.begin(), [](unsigned u){ return u+10; });
+	assert(100003 == *firstNontransformed);
+	assert(10003 != *third);
+	assert(19    == *third);
+	assert(9 == vu[2]); // Confirm that input range is untouched --- unlike with for_each.
+}
+
+
+void test__clusive_scan ()
+{	PRenteredFU;
+	std::vector<std::string> const startFrom{"aa","bb","cc","dd",};
+	constexpr size_t outpSz = 6U; // How many empty strings outp will be initially.
+#if VER_ge17
+	const auto catenator = [](std::string const& sa,std::string const& sb){ return sa+sb; };
+
+	std::vector<std::string> inp0{startFrom};
+	pr_vectStr(inp0, "inp0", __LINE__);
+	//NB: XXX std::inclusive_scan expects the output elems to already exist; just reserving capacity isn't enough.
+#if 0
+	std::vector<std::string> outp0;
+	outp0.reserve(inp0.size() * 4);
+#endif
+	std::vector<std::string> outp0(outpSz);
+	decltype(outp0)::iterator ret0 = std::inclusive_scan(
+	             inp0.cbegin(), inp0.cend(), outp0.begin(), catenator);
+	pr_vectStr(outp0, "outp0,aft", __LINE__);
+	PRmsg("inclusive_scan, no initVal, distance(outp.begin,ret) = %ld\n\n",
+	             (long) std::distance(outp0.begin(), ret0));
+	// Expect:     {  'aa'  'aabb'  'aabbcc'  'aabbccdd'  }
+
+	std::vector<std::string> inp1{startFrom};
+	pr_vectStr(inp1, "inp1", __LINE__);
+	std::vector<std::string> outp1(outpSz);
+	decltype(outp1)::iterator ret1 = std::inclusive_scan(
+	             inp1.cbegin(), inp1.cend(), outp1.begin(), catenator, std::string("ee"));
+	pr_vectStr(outp1, "outp1,aft", __LINE__);
+	PRmsg("inclusive_scan, initVal='ee', distance(outp.begin,ret) = %ld\n\n",
+	             (long) std::distance(outp1.begin(), ret1));
+	// Expect:     {  'eeaa'  'eeaabb'  'eeaabbcc'  'eeaabbccdd'  }
+
+	std::vector<std::string> inp2{startFrom};
+	pr_vectStr(inp2, "inp2", __LINE__);
+	std::vector<std::string> outp2(outpSz);
+	decltype(outp2)::iterator ret2 = std::exclusive_scan(
+	             inp2.cbegin(), inp2.cend(), outp2.begin(), std::string("ee"));
+	pr_vectStr(outp2, "outp2,aft", __LINE__);
+	PRmsg("exclusive_scan, initVal='ee', default BinaryOp, distance(outp.begin,ret) = %ld\n\n",
+	             (long) std::distance(outp2.begin(), ret2));
+	// Expect:     {  'ee'  'eeaa'  'eeaabb'  'eeaabbcc'  }
+
+	std::vector<std::string> inp3{startFrom};
+	pr_vectStr(inp3, "inp3", __LINE__);
+	std::vector<std::string> outp3(outpSz);
+	decltype(outp3)::iterator ret3 = std::exclusive_scan(
+	             inp3.cbegin(), inp3.cend(), outp3.begin(), std::string("ee"), catenator);
+	pr_vectStr(outp3, "outp3,aft", __LINE__);
+	PRmsg("exclusive_scan, initVal='ee', distance(outp.begin,ret) = %ld\n\n",
+	             (long) std::distance(outp3.begin(), ret3));
+	// Expect:     {  'ee'  'eeaa'  'eeaabb'  'eeaabbcc'  }
+
+	// Indeed, can even dispense with separate outp range: just overwrite the input!
+	std::vector<std::string> inp4{startFrom};
+	pr_vectStr(inp4, "inp4", __LINE__);
+	decltype(inp4)::iterator ret4 = std::exclusive_scan(
+	             inp4.cbegin(), inp4.cend(), inp4.begin(), std::string("ee"), catenator);
+	pr_vectStr(inp4, "inp4,aft", __LINE__);
+	PRmsg("exclusive_scan, initVal='ee', overwrite inp, distance(outp.begin,ret) = %ld\n\n",
+	             (long) std::distance(inp4.begin(), ret4));
+	// Expect:     {  'ee'  'eeaa'  'eeaabb'  'eeaabbcc'  }
+#endif
+}
+
+
+void test__transform_and_then_X ()
+{	PRenteredFU;
+/*
+	TODO: transform_inclusive_scan
+	TODO: transform_exclusive_scan
+	TODO: transform_reduce
+*/
+}
+
 
 int main () {
-	test__accumulate();
-    test__foldExprs();
 	test__for_each();
-	test__generate();
+	test__clusive_scan();
+	test__accumulate();
 	test__reduce();//TODO: test with other ExecutionPolicy ??
 	test__transform();
 }

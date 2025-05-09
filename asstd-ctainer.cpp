@@ -1,12 +1,14 @@
 /*   (c)2024 Vainstein K.   */
 #include "common.h"
 
+#include <stdlib.h> // for srand() and rand()
 #include <limits.h> // for UINT_MAX
 #include <map>
 #include <set>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 
 using setU_t = std::set<unsigned>;
@@ -148,9 +150,41 @@ void test__bucket_manip ()
 }
 
 
-void test__heterogeneousLookupAndErasure ( )
+void test__heterogeneousLookupAndErasure ()
 {
 //todo
+}
+
+
+int mk_pseudorandomInt ()
+{
+    static bool haveSeeded{false};
+    if (! haveSeeded) {
+        srand(42U);
+        haveSeeded = true;
+    }
+	return rand();
+}
+
+void test__generate ()
+{	PRenteredFU;
+//
+	std::vector<int> numbers(20); // All dflt-initialized to 0.
+	auto isZero = [](int x) -> bool { return 0==x; };
+	SAYevalCHKretBOOL(   std::all_of(numbers.cbegin(), numbers.cend(), isZero)   ,true);
+	std::generate(numbers.begin(), numbers.end(), mk_pseudorandomInt);
+	SAYevalCHKretBOOL(   std::none_of(numbers.cbegin(), numbers.cend(), isZero)   ,true);
+//
+	std::vector<std::string> strings{"aa", "bb", "cc", "dd", "ee"};
+	assert("cc" == strings[2]);
+#if VER_ge17
+	decltype(strings)::const_iterator cit =
+		std::generate_n(strings.begin(), 3U,
+		                []()->std::string { return std::to_string(mk_pseudorandomInt()); });
+	assert("dd" == *cit);
+	assert("cc" != strings[2]);
+#endif
+	PRlit(strings[2].c_str());
 }
 
 
@@ -163,14 +197,14 @@ int main()
 	test__node_merge();
 
 	test__heterogeneousLookupAndErasure();
+
+	test__generate();
 }
 
 
 
 #if 0
 TODO:
-
-std::inclusive_scan  std::exclusive_scan
 
 Heterogeneous lookup in unordered associative containers ????????????????
 

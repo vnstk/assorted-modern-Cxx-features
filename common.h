@@ -119,7 +119,7 @@
 "%s%s"\
 "%s%s%s"\
 "%s%s%s%s"\
-"%s%s%s\e[0m; sizeof=%zu alignof=%llu.\n",  __LINE__   \
+"%s%s%s%s\e[0m; sizeof=%zu alignof=%llu.\n",  __LINE__   \
 , std::is_const<decltype(z)>::value ? " const" : ""   \
 , std::is_array<decltype(z)>::value ? " array" : ""   \
 , std::is_member_pointer<decltype(z)>::value ? " membptr" : ""   \
@@ -142,7 +142,8 @@
 \
 , std::is_bind_expression<decltype(z)>::value ? " bindExpr" : ""   \
 , std::is_function<decltype(z)>::value ? " func" : ""   \
-, (std::is_object<decltype(z)>::value && ! std::is_pointer<decltype(z)>::value && ! std::is_array<decltype(z)>::value) ? " obj" : ""   \
+, std::is_null_pointer<decltype(z)>::value ? " nullptr" : ""   \
+, std::is_void<decltype(z)>::value ? " void" : ""   \
 , sizeof(decltype(z)), alignof(decltype(z)) \
 )
 

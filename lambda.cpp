@@ -6,6 +6,7 @@
 #	include <source_location>
 #endif
 
+
 /*
 lt 20,   Lambda expressions without an explicit template parameter list (possibly non-generic)
 
@@ -84,12 +85,12 @@ float S2::f (int i)
 }
 
 
+#if VER_ge20
 template<typename T1, typename T2>
 std::common_reference<T1,T2>::type fAddCommon_b (T1 x, T2 y) {
 	return x + y;
 }
 // generic lambdas: "auto"-typed params automagically "genericize".
-#if VER_ge17
 auto fAddCommon_c = [] (auto x, auto y) { return x + y; };
 #endif
 //
@@ -98,9 +99,9 @@ auto fAddCommon_c = [] (auto x, auto y) { return x + y; };
 void test__auto_retType()
 {	PRenteredFU;
 	//
+#if VER_ge20
 	auto retCommon_b = fAddCommon_b(42L, 3.14f);
 	PRtyp(retCommon_b);
-#if VER_ge17
 	auto retCommon_c = fAddCommon_c(42L, 3.14f);
 	static_assert(std::is_same_v<decltype(retCommon_b), decltype(retCommon_c)>);
 	assert(retCommon_b == retCommon_c);
@@ -146,8 +147,11 @@ void test__capture()
 	[z = std::move(xa)]() { printf("(Ln%d) xa._z=%u\n",__LINE__,z._x); }();
 
 #	if VER_ge17
-	// And, with as_const, can spare the inconvenience of creating a const-ref:
+	// And, with as_const, can spare the terrible terrible inconvenience of creating a const-ref:
 	[z = std::as_const(xa)]() { printf("(Ln%d) xa._z=%u\n",__LINE__,z._x); }();
+#	else
+	decltype(xa) const& constref_to_xa = xa;
+	[z = constref_to_xa]() { printf("(Ln%d) xa._z=%u\n",__LINE__,z._x); }();
 #	endif
 
 #endif

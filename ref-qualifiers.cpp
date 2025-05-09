@@ -1,5 +1,6 @@
 /*   (c)2024 Vainstein K.   */
 #include "common.h"
+#include <utility> //For   as_const()
 
 
 #if VER_ge23 || defined(__cpp_explicit_this_parameter)
@@ -115,6 +116,21 @@ void test__valueCateg_of_implicit_object()
 }
 
 
+void test__as_const() // Not using ref qualifiers per se, but is vaguely related.
+{	PRenteredFU;
+	Foo          foo;
+	Foo       & rfoo =  foo;
+	Foo const   cfoo;
+	Foo const &rcfoo = cfoo;
+	SAYeval(  rcfoo.g()  ); // Selects the const oload.
+	SAYeval(   rfoo.g()  ); // Selects the non-const oload.
+	SAYeval(   const_cast<Foo const&>(rfoo).g()  ); // Force selection of the const oload --- one way...
+#if VER_ge17
+	SAYeval(   std::as_const(rfoo).g()  ); // ...and with 17+, there's another way!
+#endif
+}
+
+
 int main()
 {
 #if VER_ge23 || defined(__cpp_explicit_this_parameter)
@@ -122,6 +138,7 @@ int main()
 #endif
 	test__ref_qualif();
 	test__valueCateg_of_implicit_object();
+	test__as_const();
 }
 
 /*

@@ -25,7 +25,7 @@ template<typename T>
 void f__takesLvalNonconstRef (T& r)
 {	fuPRmsg("r._ch = %c\n", r._ch);
 	PRwhat(r);
-	std::reference_wrapper<T const> rw = std::ref(r);
+	std::reference_wrapper<T> rw = std::ref(r);
 	rw = std::ref(rw); // idempotent
 	rw = std::ref(rw); // idempotent, I said
 	// Of the 3 expected-illegal lines below, only 1st actually evinced error:
@@ -38,7 +38,13 @@ template<typename T>
 void f__takesRvalConstRef (T const&& r)
 {	fuPRmsg("r._ch = %c\n", r._ch);
 	PRwhat(r);
-	std::reference_wrapper<T const> rw = std::cref(r);
+	static_assert(std::conjunction<
+		std::is_rvalue_reference<decltype(r)>,
+		std::is_const<typename std::remove_reference<decltype(r)>::type>>::value);
+	std::reference_wrapper<T const> rw = std::cref(r); /* That should have been impossible, since
+			template< class T >
+			void cref( const T&& ) = delete;            */
+	//
 	rw = std::cref(rw); // idempotent
 	rw = std::cref(rw); // idempotent, I said
 	// Of the 3 expected-illegal lines below, only 2nd and 3rd actually evinced error:
@@ -47,6 +53,7 @@ void f__takesRvalConstRef (T const&& r)
 //	std::reference_wrapper<T>       cWrong = std::cref(rw); // cref() won't produce wrapper-of-T&-nonconst
 }
 
+// The reason f__takesRvalNonconstRef() works is that r **itself**, the arg, is an lval ref. */
 template<typename T>
 void f__takesRvalNonconstRef (T&& r)
 {	fuPRmsg("r._ch = %c\n", r._ch);
@@ -64,7 +71,6 @@ void f__takesRvalNonconstRef (T&& r)
 
 void test__std_ref__and__std_cref()
 {	PRenteredFU;
-
 	Foo a;
 	Foo const b;
 	PRwhat(a);
@@ -82,7 +88,59 @@ void test__std_ref__and__std_cref()
 	SAYeval( f__takesRvalConstRef(std::move(f)) );
 }
 
+
+void test__unwrapping_the_wrapper()
+{	PRenteredFU;
+	Foo x, y, z;
+	Foo const cx;
+	Foo& rx = x;
+	Foo const& rcx = cx;
+	std::reference_wrapper<Foo>        wx = std::ref(rx);
+	std::reference_wrapper<Foo const> wcx = std::cref(rcx);
+	
+//	std::reference_wrapper<Foo>        wmx = std::ref(std::move(y));
+//	std::reference_wrapper<Foo const> wcmx = std::cref(std::move(z));
+
+
+#ifdef VER_ge20
+	// unwrap_reference said to transform refwrap<T> into T&.
+
+	Foo x2;
+	Foo const cx2;
+	std::unwrap_reference<decltype(wx)>::type urx = x2;
+	std::unwrap_reference<decltype(wcx)>::type urcx = cx2;
+
+	static_assert(std::conjunction< // Let's make sure 
+		std::is_lvalue_reference<decltype(urx)>,
+		std::negation<
+			std::is_const<typename std::remove_reference<decltype(urx)>::type>
+		>>::value);
+	static_assert(std::conjunction< // Let's make sure 
+		std::is_lvalue_reference<decltype(urcx)>,
+		std::is_const<typename std::remove_reference<decltype(urcx)>::type>
+		>::value);
+#if 0   //TODO more of
+20
+std::unwrap_reference
+	reference_wrapper<T>  ==>  T&
+std::unwrap_ref_decay
+https://en.cppreference.com/w/cpp/utility/functional/unwrap_reference
+#endif
+#endif
+
+
+}
+
+
+void test__wrap_something_else()
+{	PRenteredFU;
+//can change constntess of the wrappee?
+}
+
 int main (){
+	test__std_ref__and__std_cref();
+	test__unwrapping_the_wrapper();
+return 0;
 #if 0
 	float nonconstf;
 	PRwhat(nonconstf);
@@ -107,15 +165,8 @@ int main (){
 	Foo const& crx = cx;
 	PRwhat(crx);
 
-	static_assert( std::is_const<  std::remove_pointer<decltype(pf)>::type >::value );
-
-	static_assert( std::conjunction<  
-		std::is_pointer<decltype(pf)>,  
-		std::is_const<std::remove_pointer<decltype(pf)>::type> >::value );
-
 #endif
 
-	test__std_ref__and__std_cref();
 }
 
 
@@ -126,9 +177,6 @@ int main (){
 terminology refresh:
 decay means.....  T[]  or  T[]&  ==>   T*    ;  Tfunc  or  Tfunc&  ==>  Tfunc*  .
 
-
-remove_reference<U&&> ===> U
-remove_reference<U&>  ===> U
 
 a)	std::add_rvalue_reference<U>::type //11 
 b)	std::add_rvalue_reference<U>          //14+ 
@@ -158,16 +206,28 @@ https://en.cppreference.com/w/cpp/standard_library/decay-copy
 std::reference_wrapper
 https://en.cppreference.com/w/cpp/utility/functional/reference_wrapper
 
-20
-std::unwrap_reference
-	reference_wrapper<T>  ==>  T&
-std::unwrap_ref_decay
-https://en.cppreference.com/w/cpp/utility/functional/unwrap_reference
-
 23+
 std::basic_common_reference
 https://en.cppreference.com/w/cpp/utility/functional/reference_wrapper/basic_common_reference
 
+
+remove_reference<U&&> ===> U
+remove_reference<U&>  ===> U
+20
+remove_cvref
+
+
+In fact, std::make_pair() decays the passed argu-
+ment (passing them by value in C++03 and using traits since C++11).
+Josuttis 105
+
+
+Using Deduction Guides to Force Decay
+Josuttis 107
+
+
+As usual for make... functions,its arguments decay:
+Josuttis 141
 */
 
 

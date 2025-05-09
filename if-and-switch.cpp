@@ -22,8 +22,16 @@ int main ()
 	}
 
 #if VER_ge17
-	// NB: may only declare *one* var inside the if-cond.
-//	if (int ii = 42; double dd = 3.5; bool bb = true; bb) {
+	// NB: may only declare vars of *one* type inside the if-cond.
+#if 0
+	if (int ii = 42; double dd = 3.5; bool bb = true; bb) {
+	}
+#endif
+	// But may decl mult vars of that one type.
+	if (int ii = 42, jj = 43, kk = ii+jj; ii < kk) {
+	} else {
+		ii *= -kk; // Look, scope extends all the way into else-block!
+	}
 
 	// Amusingly, can use the just-declared var as the if-cond.
 	if (bool bb = m.empty(); bb) { printf("Made it\n"); }

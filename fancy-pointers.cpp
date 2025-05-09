@@ -1,5 +1,8 @@
 /*   (c)2024 Vainstein K.   */
 #include "common.h"
+#if ! VER_ge17
+#	error "Everything in this file needs 17+"
+#endif
 #include <optional>
 #include <variant>
 #include <any>
@@ -40,12 +43,83 @@ struct AlsoNotDefaultConstructible {
 };
 
 
-#if VER_ge17
+struct Foo {
+	Foo (float f, char ch) {}
+	Foo (float f) {}
+};
 
 
-void test___std_optional()
+std::optional<int> fancyToInt__oneWay (char const *s) {
+	int n = atoi(s);
+	if (n)
+		return n;
+	return std::nullopt;
+}
+std::optional<int> fancyToInt__anothWay (char const *s) {
+	std::optional<int> ret;
+	int n = atoi(s);
+	if (n)
+		ret = n;
+	return ret;
+}
+
+void test___std_optional__checkingIsEmpty()
 {	PRenteredFU;
+	std::optional<int> ox = fancyToInt__oneWay("42");
+	if (ox)
+		PRmsg("Cverted to num %d\n", *ox);
+	else
+		PRlit("Not cverted, empty ox");
+	PRmsg("Fallback-cverted ox: %d\n", ox.value_or(-999));
+	std::optional<int> oy = fancyToInt__oneWay("thirty-five");
+	if (oy)
+		PRmsg("Cverted to num %d\n", *oy);
+	else
+		PRlit("Not cverted, empty oy");
+	// Another way
+	PRmsg("Cverted oy: %c\n", oy.has_value() ? 'Y':'N');
+	PRmsg("Fallback-cverted oy: %d\n", oy.value_or(-999));
+
+	std::optional<unsigned> emptyOu_0;
+	std::optional<unsigned> emptyOu_1{std::nullopt}; // Same deal
+	assert(emptyOu_0 == emptyOu_1); // "they're both empty"
+
+	std::optional<unsigned> willBeEmptied_0{42U};
+	std::optional<unsigned> willBeEmptied_1{42U};
+	std::optional<unsigned> willBeEmptied_2{42U};
+
+	willBeEmptied_0 = std::nullopt;
+	willBeEmptied_1.reset();
+	willBeEmptied_2 = {};
+
+	assert(emptyOu_0 == willBeEmptied_0);
+	assert(emptyOu_0 == willBeEmptied_1);
+	assert(emptyOu_0 == willBeEmptied_2);
+}
+
+
+void test___std_optional__other()
+{	PRenteredFU;
+	std::optional o10{5.5F}; // of course won't call Foo's monadic ctor
+	std::optional<Foo> o11{5.5F}; // will call Foo's monadic ctor
+
+	// What about ctors with 2+ args?
+#if 0
+	std::optional<Foo> o12{5.5F, 'Z'}; // Err!!
+#endif
+	std::optional<Foo> o12{std::in_place, 5.5F, 'Z'}; // calls dyadic ctor, OK
+
+	std::optional<Foo> o13{Foo{5.5F, 'Z'}}; // But this way, create a temporary
+
+	std::optional<Foo> o14 = std::make_optional<Foo>(5.5F, 'Z');
+
+	// anoth examp
+    // calls std::string( size_type count, CharT ch ) constructor
+    std::optional<std::string> o33(std::in_place, 3, 'A');
+
+	// ctor takg initializer_list ?
 	std::optional<std::string> o1(std::in_place, {'a', 'b', 'c'});
+	assert(*o1 == "abc");
 	std::optional<std::string> o2(std::in_place, 5, 'Z');
 	std::string s0{"bunnies"};
 	std::optional<std::string> o3(std::move(s0));
@@ -58,24 +132,23 @@ void test___std_optional()
 	std::optional<std::string> o5 = std::make_optional<std::string>(11,'J');
 	auto                       o6 = std::make_optional<std::string>(11,'J');
 
-	printf("(Ln%d) ctains a value?  %s\n",__LINE__, (bool)o1?"yea":"nay");
-	printf("(Ln%d) ctains a value==>  \"%s\"\n",__LINE__, o1.value_or("sadness").c_str());
+	PRmsg("ctains a value?  %s\n", (bool)o1?"yea":"nay");
+	PRmsg("ctains a value?  %s\n", o1.has_value()?"yea":"nay");
+	PRmsg("ctains a value==>  \"%s\"\n", o1.value_or("alternVal").c_str());
 	o1.reset();
-	printf("(Ln%d) still ctains a value?  %s\n",__LINE__, (bool)o1?"yea":"nay");//Should't.
-	printf("(Ln%d) ctains a value==>  \"%s\"\n",__LINE__, o1.value_or("sadness").c_str());
+	PRmsg("still ctains a value?  %s\n", (bool)o1?"yea":"nay");//Should't.
+	PRmsg("ctains a value==>  \"%s\"\n", o1.value_or("alternVal").c_str());
 
-	printf("(Ln%d) o2 ctains \"%s\"\n",__LINE__,  o2->c_str());
-	printf("(Ln%d) o2 ctains \"%s\"\n",__LINE__,(*o2).c_str());
+	PRmsg("o2 ctains \"%s\"\n",  o2->c_str());
+	PRmsg("o2 ctains \"%s\"\n",(*o2).c_str());
 
 	//Uninit optional has special type nullopt_t...
+	// ...except it doesn't when I tried.  (Both ways.)
 	std::optional<std::string> o7{std::nullopt};
 //	static_assert(std::is_same<decltype(o7), std::nullopt_t>());
-	std::optional<std::string> o8{std::nullopt};
-//	static_assert(std::is_same<decltype(o8), std::nullopt_t>());
-	// ...except it doesn't when I tried.
+//	static_assert(std::is_same<decltype(o7)::value_type, std::nullopt_t>());
 
 #if VER_ge23 || defined(__cpp_lib_optional)
-	puts("Monadic operations in std::optional");
 	// XXX TODO XXX
 	// and_then
 		// If *this contains a value, invokes f with the contained value as an argument, and returns the result of that invocation; otherwise, returns an empty std::optional.
@@ -87,8 +160,48 @@ void test___std_optional()
 }
 
 
-void test__std_variant()
+void test__std_variant__checkingTenantType()
 {	PRenteredFU;
+
+	std::variant<unsigned,long,double,char const*,bool> vObj;
+
+	// Some cpiletime helpers
+	static_assert(std::variant_size_v<decltype(vObj)> == 5);
+	//
+	static_assert(std::is_same_v<  double ,
+	                               std::variant_alternative_t<2, decltype(vObj)>  >);
+	vObj = 42U;
+	SAYevalCHKretBOOL( std::holds_alternative<unsigned>(vObj)     ,true);
+	SAYevalCHKretBOOL( vObj.index() == 0                          ,true);
+
+	vObj = "bunnies";
+	SAYevalCHKretBOOL( std::holds_alternative<char const*>(vObj)  ,true);
+	SAYevalCHKretBOOL( vObj.index() == 3                          ,true);
+}
+
+
+void test__std_variant__other()
+{	PRenteredFU;
+	// Hey let's all blindly trust the compiler!
+	std::variant<float, bool, int64_t, signed char const, char const *> v0;
+
+	assert(v0.index() == 0);
+
+	v0 = false; assert(v0.index() == 1);
+
+	v0 = (uint16_t)42;
+	PRmsg("Handed u16, %zu\n", v0.index()); // chose int64_t
+
+	v0 = (uint8_t)42;
+	PRmsg("Handed u8, %zu\n", v0.index()); // chose int64_t
+
+//	v0 = (uint64_t)42;       // Err!
+//	v0 = (uintptr_t)42;       // Err!
+
+	v0 = (bool const)false;  // chose bool
+//	v0 = (signed char)'Z';  // Err
+	// Feels free to discard arg's constness, but not type param's constness.
+
     // Default ctor value-initializes the first (i.e. index=0) alternative,
     std::variant<long, std::string> v1;
     assert(std::holds_alternative<long>(v1)   &&
@@ -113,34 +226,31 @@ void test__std_variant()
 	// move assign or type-changing emplace, etc.
 	assert(! v1.valueless_by_exception());
 
-	std::variant<unsigned,long,double,char const*,bool> v4;
-
-	// Some cpiletime helpers
-	static_assert(std::variant_size_v<decltype(v4)> == 5);
-	//
-	static_assert(std::is_same_v<  double ,
-	                               std::variant_alternative_t<2, decltype(v4)>  >);
-
 	// visit: inflict a callable on curr occupant.
+	//  Visitors are objects that have to unambiguously provide a function call operator for each possible type.
 	auto visA = [](auto&& xarg) -> int {
-		return
-		printf("/%s/A  xarg \"%lld\" |sizeof=%zu\n", currFU, (long long)(xarg), sizeof(xarg));
+		return fuPRmsg("A xarg '%lld'  sizeof=%zu\n", (long long)(xarg), sizeof(xarg));
 	};
-	auto visB = [](auto const& xarg){
-		printf("/%s/B  xarg \"%lld\" |sizeof=%zu\n", currFU, (long long)(xarg), sizeof(xarg));
+	auto visB = [](auto const& xarg) -> void {
+		fuPRmsg("B xarg '%lld'  sizeof=%zu\n", (long long)(xarg), sizeof(xarg));
 	};
 	OloadedFuCallOp ofco;
 	//
-	std::vector<decltype(v4)> vec_of_v4 = {77U, 33L, 3.14, "bunnies", true};
-	for (auto& some_v4 : vec_of_v4) {
+	std::variant<unsigned,long,double,char const*,bool> fallow_vObj;
+	using vObjType = decltype(fallow_vObj);
+	std::vector<decltype(fallow_vObj)> vec = {77U, 33L, 3.14, "bunnies", true};
+	for (auto& some_vObj : vec) {
 		puts("-------------------");
-		std::visit(visA, some_v4);
-		std::visit(visB, some_v4);
-		std::visit(ofco, some_v4);
+		size_t const idx = some_vObj.index();
+		PRmsg("Now, vObj holding %zuth poss type\n", idx);
+//		PRmsg("Now, %s\n", typeid(typename std::variant_alternative_t<idx, decltype(fallow_vObj)>).name());
+		std::visit(visA, some_vObj); // returns int
+		std::visit(visB, some_vObj); // returns void
+		std::visit(ofco, some_vObj);
 #if NULL ///////// and this ought to work... but doesn't.
 #	if VER_ge20 // Further, 20+ gives "invoke_r" spiffed-up version of visit().
-//		int const retint = std::visit(obrt, some_v4);
-		float const retfloat = std::visit<float,OloadedByRetType,decltype(some_v4)>(obrt, some_v4);
+//		int const retint = std::visit(obrt, some_vObj);
+		float const retfloat = std::visit<float,OloadedByRetType,decltype(some_vObj)>(obrt, some_vObj);
 #	endif
 #endif
 	}
@@ -149,6 +259,51 @@ void test__std_variant()
 	//
 //	std::variant<               NotDefaultConstructible,float> v5;  //Err: cannot default-cstruct 1st type!
 	std::variant<std::monostate,NotDefaultConstructible,float> v6;  //Dummy type to the rescue.
+}
+
+
+void test__std_variant__derivingFrom()
+{	PRenteredFU;
+	//TODO
+}
+
+
+
+struct ZenMonk {
+	void                  mkSound ()                 const {}
+};
+struct Cat {
+	double                mkSound ()                 const {
+		puts("Meyyowww");  return 3.14159;   }
+};
+struct Dog {
+	static void           mkSound (uint16_t bone = 42)     {
+		puts("Arf,arff");  }
+};
+struct CircularSaw {
+	std::pair<char,float> mkSound ()                 const {
+		puts("Eeyyowww");  return std::make_pair('Z',35.6F);  }
+};
+
+using Polyphonic = std::variant<Cat, Dog, CircularSaw, ZenMonk>;
+
+void test__std_variant__aKindOfPolymorphism()
+{	PRenteredFU;
+	std::vector<Polyphonic> vec;
+	vec.push_back(Dog{});
+	vec.push_back(CircularSaw{});
+	vec.push_back(Cat{});
+	vec.push_back(CircularSaw{});
+	vec.push_back(ZenMonk{});
+	vec.push_back(CircularSaw{});
+	vec.push_back(Cat{});
+	//
+	for (Polyphonic const& vecElem : vec) {
+		std::visit(
+					[] (auto const& audible) { audible.mkSound(); } //a generic lambda
+					,
+					vecElem);
+	}
 }
 
 
@@ -174,6 +329,29 @@ void test__std_any()
 	printf("Turns out, contents of a4 typed =  %s\n", a4.type().name());
 	printf("Turns out, contents of a5 typed =  %s\n", a5.type().name());
 
+	std::any a10{42};
+	assert(a10.type() == typeid(int));
+	// Get the literal's ype; if want special treatment, say so with in_place_type
+	std::any a11{ std::in_place_type<long>, 42 };
+	// ...or, you know, [gasp] cast it maybe?
+	std::any a12{(long)42};
+	assert(a12.type() == typeid(long));
+	std::any a13{42L};
+	assert(a13.type() == typeid(long));
+	std::any a14{"bunnies"};
+	assert(a14.type() == typeid(char const*));
+	std::any a15{(std::string) "bunnies"};
+	assert(a15.type() == typeid(std::string));
+
+	// Deposited values decay: lose their constness/refness; and arrays become ptrs.
+	std::string const sIn{"chair"};
+	std::any a16{sIn};
+	std::string& sOut = std::any_cast<std::string&>(a16);
+	sOut += "man";
+	PRmsg("And now now sIn=\"%s\"\n", sIn.c_str());
+	// Luckily, value semantics ==> everything copied (expensive BTW), so sIn unchanged.
+
+	// Actually getting the value **back out**: need any_cast.
 	auto contents_of_a5 = std::any_cast<unsigned>(a5); // If type wrong, throws.  (What, thought it'd be signed eh?)
 
 	// In-place cstru, with in_place_type,
@@ -187,12 +365,12 @@ void test__std_any()
 }
 
 
-#endif // VER_ge17
-
 int main() {
-#if VER_ge17
-	test___std_optional();
-	test__std_variant();
+	test___std_optional__checkingIsEmpty();
+	test___std_optional__other();
+	test__std_variant__checkingTenantType();
+	test__std_variant__derivingFrom();
+	test__std_variant__other();
+	test__std_variant__aKindOfPolymorphism();
 	test__std_any();
-#endif
 }
