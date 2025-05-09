@@ -36,12 +36,6 @@ struct NotDefaultConstructible {
 	NotDefaultConstructible() =delete;
 };
 
-struct AlsoNotDefaultConstructible {
-	int _i;
-	AlsoNotDefaultConstructible (int i) : _i(i) {}
-	AlsoNotDefaultConstructible() =delete;
-};
-
 
 struct Foo {
 	Foo (float f, char ch) {}
@@ -52,7 +46,7 @@ struct Foo {
 std::optional<int> fancyToInt__oneWay (char const *s) {
 	int n = atoi(s);
 	if (n)
-		return n;
+		return n; // Implicit envelopment by std::optional<>: what could *possibly* go wrong.
 	return std::nullopt;
 }
 std::optional<int> fancyToInt__anothWay (char const *s) {
@@ -63,7 +57,24 @@ std::optional<int> fancyToInt__anothWay (char const *s) {
 	return ret;
 }
 
-void test___std_optional__checkingIsEmpty()
+
+
+void test__std_optional__retrieveManagedValue()
+{	PRenteredFU;
+	unsigned const input = 77U;
+	std::optional<unsigned> ox{input};
+	auto x0 = *ox;
+	auto x1 = ox.value();
+	auto x2 = ox.value_or(88U);
+	auto x3 = std::move(ox);
+	assert(input==x0);
+	assert(input==x1);
+	assert(input==x2);
+	assert(input==x3);
+}
+
+
+void test__std_optional__checkTenantPresence()
 {	PRenteredFU;
 	std::optional<int> ox = fancyToInt__oneWay("42");
 	if (ox)
@@ -98,7 +109,7 @@ void test___std_optional__checkingIsEmpty()
 }
 
 
-void test___std_optional__other()
+void test__std_optional__other()
 {	PRenteredFU;
 	std::optional o10{5.5F}; // of course won't call Foo's monadic ctor
 	std::optional<Foo> o11{5.5F}; // will call Foo's monadic ctor
@@ -159,8 +170,29 @@ void test___std_optional__other()
 #endif
 }
 
+//--------------------------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------------------//
 
-void test__std_variant__checkingTenantType()
+void test__std_variant__retrieveManagedValue()
+{	PRenteredFU;
+	unsigned const input = 77U;
+	using yaVari_t = std::variant<std::string,unsigned const,float,bool>;
+	yaVari_t vx{input};
+	auto x0 = std::get<decltype(input)>(vx);
+	auto x1 = std::get<1>(vx);
+	auto x2 =*std::get_if<decltype(input)>(&vx);
+	auto x3 =*std::get_if<1>(&vx);
+//	auto x4 = std::move(vx);   //Nope!  That just produces another std::variant<> obj.
+	assert(input==x0);
+	assert(input==x1);
+	assert(input==x2);
+	assert(input==x3);
+//	assert(input==x4);
+}
+
+
+void test__std_variant__checkTenantType()
 {	PRenteredFU;
 
 	std::variant<unsigned,long,double,char const*,bool> vObj;
@@ -226,6 +258,15 @@ void test__std_variant__other()
 	// move assign or type-changing emplace, etc.
 	assert(! v1.valueless_by_exception());
 
+	// How to ensure a variant is default-cstructible, even if its cstitients aren't.
+	//
+//	std::variant<               NotDefaultConstructible,float> v5;  //Err: cannot default-cstruct 1st type!
+	std::variant<std::monostate,NotDefaultConstructible,float> v6;  //Dummy type to the rescue.
+}
+
+
+void test__std_variant__visitCall()
+{	PRenteredFU;
 	// visit: inflict a callable on curr occupant.
 	//  Visitors are objects that have to unambiguously provide a function call operator for each possible type.
 	auto visA = [](auto&& xarg) -> int {
@@ -254,11 +295,6 @@ void test__std_variant__other()
 #	endif
 #endif
 	}
-
-	// How to ensure a variant is default-cstructible, even if its cstitients aren't.
-	//
-//	std::variant<               NotDefaultConstructible,float> v5;  //Err: cannot default-cstruct 1st type!
-	std::variant<std::monostate,NotDefaultConstructible,float> v6;  //Dummy type to the rescue.
 }
 
 
@@ -266,7 +302,6 @@ void test__std_variant__derivingFrom()
 {	PRenteredFU;
 	//TODO
 }
-
 
 
 struct ZenMonk {
@@ -306,8 +341,33 @@ void test__std_variant__aKindOfPolymorphism()
 	}
 }
 
+//--------------------------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------------------//
 
-void test__std_any()
+void test__std_any__retrieveManagedValue()
+{	PRenteredFU;
+	unsigned const input = 77U;
+	std::any ax{input};
+	auto x0 = std::any_cast<decltype(input)>(ax);
+//	auto x1 = std::move(ax);   // Nope!  That just produces another std::any obj.
+	assert(input==x0);
+//	assert(input==x1);
+}
+
+
+void test__std_any__checkTenantTypeAndPresence()
+{	PRenteredFU;
+	unsigned const input = 77U;
+	std::any ax{input};
+	assert(ax.has_value());
+	assert(ax.type() == typeid(decltype(input)));
+	ax.reset();
+	assert(!ax.has_value());
+}
+
+
+void test__std_any__other()
 {	PRenteredFU;
 	std::any        a0; // Empty
 	assert(! a0.has_value());
@@ -366,11 +426,16 @@ void test__std_any()
 
 
 int main() {
-	test___std_optional__checkingIsEmpty();
-	test___std_optional__other();
-	test__std_variant__checkingTenantType();
+	test__std_optional__retrieveManagedValue();
+	test__std_optional__checkTenantPresence();
+	test__std_optional__other();
+	test__std_variant__retrieveManagedValue();
+	test__std_variant__checkTenantType();
 	test__std_variant__derivingFrom();
+	test__std_variant__visitCall();
 	test__std_variant__other();
 	test__std_variant__aKindOfPolymorphism();
-	test__std_any();
+	test__std_any__retrieveManagedValue();
+	test__std_any__checkTenantTypeAndPresence();
+	test__std_any__other();
 }

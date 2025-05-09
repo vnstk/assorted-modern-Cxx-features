@@ -112,7 +112,6 @@ template<typename T>
 
 template<typename T>
 decltype(auto) g01 (T (&arr) [30]) { return arr; }
-
 #endif
 
 struct Fubar {
@@ -133,7 +132,6 @@ void test__decltype_subtleties()
 	PRtyp(g00<float>); // ret type reported as    float*
 	PRtyp(g01<float>); // ret type reported as    float[30]
 #endif
-
 }
 
 
@@ -282,7 +280,6 @@ void test__structured_binding__of_userdef_typ ()
 	//TODO, maybe.
 #endif
 }
-
 
 
 
