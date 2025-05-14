@@ -249,16 +249,19 @@ void test__shared_ptr__miscOther ()
 		std::shared_ptr<Foo> sh4( std::move(sh) );
 		assert(3 == sh4.use_count());
 	}
+PRlit("11 misc_other");
 	{	// Array
 		PRlit("77,88,99");
 		std::shared_ptr<Foo[]> sha( new Foo[]{77U,88U,99U} );
 		SAYevalCHKret( sha[2]._u , "%u" , 99U ); // Should require at least 17, but doesn't.  Weird.
 	}
+PRlit("22 misc_other");
 	{	// Custom deleter
 		std::shared_ptr<Zoo> shz22( new Zoo(22U) , Zoo::deleterA );
 		std::shared_ptr<Zoo> shz33( new Zoo(33U) , Stru_deleterE() );
 	}	// XXX How come Deleter type not a te param, as was the case with unique_ptr??
 
+PRlit("33 misc_other");
 	{	// owner_before ???
 		std::shared_ptr<Bar> shA(new Bar(42U, "xxx"));
 		std::shared_ptr<Bar> shB(shA);
@@ -271,8 +274,11 @@ void test__shared_ptr__miscOther ()
 		PRmsg("shA %s shF\n", shA.owner_before(shF) ? "owner_before" : "???");
 		PRmsg("shB %s shC\n", shB.owner_before(shC) ? "owner_before" : "???");
 		//TODO: figure out.
+PRlit("33.5 misc_other");
 	}
 	// owner_before is owner-based; so is owner_less.  What's this mean???
+PRlit("At end of misc_other");
+fflush(stdout);
 }
 
 
@@ -303,20 +309,102 @@ provides mixed-type owner-based ordering of shared and weak pointers
 
 void test__smart_ptr_adaptors () //out_ptr_t, inout_ptr_t
 {	PRenteredFU;
+	//TODO
+}
 
+
+struct HFoo {
+	float const _f;
+	HFoo () =delete;
+	HFoo (float f) : _f(f) { PRmsg("cstructg HFoo %p, _f=%.1f\n",this,_f);   }
+	~HFoo() {                PRmsg("destruct HFoo %p, _f=%.1f\n", this,_f);   }
+};
+struct HBar {
+	HFoo _foo;
+	char _ch;
+	HBar () =delete;
+	HBar (float f, char ch) : _foo(f), _ch(ch) {
+		      PRmsg("cstructg HBar %p, &_foo=%p _ch=%c\n",this,&_foo,_ch);   }
+	~HBar() { PRmsg("destruct HBar %p, &_foo=%p _ch=%c\n",this,&_foo,_ch);   }
+};
+struct HQux {
+	uint16_t _hu;
+	HQux () =delete;
+	HQux (uint16_t hu) : _hu(hu) { PRmsg("cstructg HQux %p, _hu=%hu\n",this,_hu);   }
+	~HQux() {                      PRmsg("destruct HQux %p, _hu=%hu\n",this,_hu);   }
+};
+struct HFlarp {
+	bool _b;
+};
+
+/*  shared_ptr may share ownership of [managed] object XX while
+    storing ptr to object YY.  YY is normally type of some field
+    of XX, or is alias (e.g., downcast) of r.get()
+*/
+void test__sharptr_fromScratch()
+{	PRenteredFU;
+	HFoo *rawpfoo = new HFoo(3.4F);
+	HBar *rawpbar = new HBar(5.6F, 'Z');
+	HQux *rawpqux = new HQux(78);
+
+#if 0
+template<Y>  explicit shared_ptr (Y *ptr);
+#endif
+	std::shared_ptr<HBar>       shapbar_1{rawpbar}; /*** manages a HBar, stores same?? ***/
+	SAYevalCHKret(shapbar_1.use_count(), "%ld" ,1L);
+	static_assert(std::is_same<decltype(shapbar_1)::element_type, HBar>());
+	//
+	auto& ref_1 = *shapbar_1;
+	static_assert(std::is_same<decltype(ref_1), HBar &>());
+	SAYevalCHKretBOOL( &ref_1 == rawpbar ,true );
+	//
+	auto *gotten_1 = shapbar_1.get(); // Returns the stored
+	static_assert(std::is_same<decltype(gotten_1), HBar *>());
+	SAYevalCHKretBOOL( gotten_1 == rawpbar ,true );
+	//
+	auto& pfield_1 = shapbar_1->_foo;
+	static_assert(std::is_same<decltype(pfield_1), HFoo&>());
+	SAYevalCHKretBOOL( &pfield_1 == &rawpbar->_foo ,true );
+
+#if 0
+template<Y>  shared_ptr (const shared_ptr<Y>& r, element_type* ptr) noexcept;
+#endif
+	std::shared_ptr<HFoo> shapbar_2{shapbar_1, &pfield_1};
+	SAYevalCHKret(shapbar_1.use_count(), "%ld" ,2L);
+	static_assert(std::is_same<decltype(shapbar_2)::element_type, HFoo>());
+	//
+	auto& ref_2 = *shapbar_2;
+	static_assert(std::is_same<decltype(ref_2), HFoo&>());
+
+	auto *gotten_2 = shapbar_2.get();
+	static_assert(std::is_same<decltype(gotten_2), HFoo *>());
+
+	std::shared_ptr<HQux> shapbar_3{shapbar_1, rawpqux};
+
+	auto& ref_3 = *shapbar_3;
+	static_assert(std::is_same<decltype(ref_3), HQux&>());
+
+//	auto *gotten_3 = shapbar_3.get();
+//	static_assert(std::is_same<decltype(gotten_3), HQux *>());
+
+
+	std::shared_ptr<HFlarp> shapbar_4{shapbar_1, (HFlarp*)nullptr};
+	auto *gotten_4 = shapbar_4.get();
 }
 
 
 
 int main () {
+	test__weak_ptr();
+	test__smart_ptr_adaptors();
+	test__sharptr_fromScratch();
 	test__unique_ptr__customDeleter();
 	test__unique_ptr__noFrills();
 	test__unique_ptr__customDeleter();
 	test__shared_ptr__aliasingCtor();
 	test__enable_shared_from_this();
 	test__shared_ptr__miscOther();
-	test__weak_ptr();
-	test__smart_ptr_adaptors();
+PRlit("back in main, returned from miscOther");
 }
 
 
@@ -324,8 +412,6 @@ int main () {
 
 #if NULL
 std::atomic<std::shared_ptr> //20
-  
-
 
 shared_ptr<T>::operator[] //17 --- provides indexed access to the stored array
   
@@ -335,6 +421,7 @@ static_pointer_cast // 17 --- applies static_cast, dynamic_cast, const_cast, or 
 dynamic_pointer_cast
 const_pointer_cast
 reinterpret_pointer_cast
+	---These are all syntactic sugar with no redeeming qualities.
  
 std::allocate_shared, std::allocate_shared_for_overwrite
 https://en.cppreference.com/w/cpp/memory/shared_ptr/allocate_shared

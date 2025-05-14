@@ -6,9 +6,9 @@
 #include <string>
 #include <optional>
 #include <variant>
-#include <vector>
 #include <any>
 #include <time.h> // For clock()
+#include <functional> //For std::function
 
 struct Bar {
 	long _i;
@@ -127,6 +127,11 @@ void test__decltype_subtleties()
 	PRwhat(yesParenthesized); // "lvalue ref" ==> Nope!   So, don't parenthesize.
 
 #if VER_ge14
+#	if 0
+	std::function fuWrapper__f01{f01};
+	decltype<fuWrapper__f01>::result_type obj_of_retType__f00;
+	PRtyp(obj_of_retType__f00);        // ret type reported as    int
+#	endif
 	PRtyp(f00);        // ret type reported as    int
 	PRtyp(f01);        // ret type reported as    int const&
 	PRtyp(g00<float>); // ret type reported as    float*
@@ -339,6 +344,17 @@ void test__list_initialization()
 }
 
 
+void test__ref_to_literal() // Turns out, this is legal!
+{	PRenteredFU;
+	float const& crf = 3.14159F;
+#if 0 //, but not
+	float& rf = 3.14159F;
+#endif
+	std::string const& crs = "bunnies";
+	printf("So, is it ref to a temporary??? [%s]\n", crs.c_str());
+}
+
+
 // Non-const static datamemb can now be initialized inside class def.
 // And *every* TU including such a header will have to dedicate storage for it.
 struct Flarp {
@@ -356,4 +372,5 @@ int main ()
 	test__piecewise_construct();
 	test__aggregate_initialization();
 	test__list_initialization();
+	test__ref_to_literal();
 }

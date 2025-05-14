@@ -3,7 +3,7 @@
 #include <string.h>
 #include <initializer_list>
 #include <vector>
-#include <algorithm>
+#include <algorithm> //For count_if
 #include <array>
 
 
@@ -46,6 +46,8 @@ void test__the_funnies () {
 	       assert(5LU == funny_1(local_ilist)); // runtime
 	static_assert(6LU == funny_1(global_ilist)); // cpiletime
 }
+#else
+void test__the_funnies () {}
 #endif
 
 
@@ -100,10 +102,51 @@ auto fugget_value(TPtr t)
 #endif
 
 
-int main() {
-#if VER_ge20
-	test__the_funnies();
+
+void test__constexpr_lambdas()
+{	PRenteredFU;
+
+#if VER_ge17
+	auto squared1 = [](auto val) constexpr { // compile-time lambda calls
+		return val*val;   };
 #endif
+#if VER_ge17
+	constexpr auto squared2 = [](auto val) { // compile-time initialization
+		return val*val;   };
+#endif
+
+
+	std::vector<Foo> vfoo;
+	vfoo.emplace_back(45U);
+	//
+	auto unaryPred1 =
+	              [](const Foo& refFoo){return refFoo._x > refFoo._y;};
+	(void) std::count_if(vfoo.cbegin(), vfoo.cend(), unaryPred1);
+	//
+#if VER_ge17 // constexpr lambdas
+	constexpr auto unaryPred2 =
+	              [](const Foo& refFoo){return refFoo._x > refFoo._y;};
+	(void) std::count_if(vfoo.cbegin(), vfoo.cend(), unaryPred2);
+#endif
+}
+
+
+void test__nontype_te_args()
+{	PRenteredFU;
+	          int Nz = 42;
+	const     int Na = Nz;
+	const     int Nb = 42;
+	constexpr int Nc = 42;
+//	std::array<float,Na> arrayTNa;    //Err!!  Because Na populated runtime.
+	std::array<float,Nb> arrayTNb;
+	std::array<float,Nc> arrayTNc;
+}
+
+
+int main() {
+	test__the_funnies();
+	test__constexpr_lambdas();
+	test__nontype_te_args();
 
 	const Foo fooa{77};
 //	PRwhat(fooa);
@@ -120,28 +163,5 @@ int main() {
 	const Foo& x1 = fooa;
 	const Foo& x2 = foob;
 //	PRwhat(x2);
-
-	const float& crf = 3.14159F;
-
-	std::vector<Foo> vfoo;
-	vfoo.emplace_back(45U);
-	//
-	auto unaryPred1 =
-	              [](const Foo& refFoo){return refFoo._x > refFoo._y;};
-	(void) std::count_if(vfoo.cbegin(), vfoo.cend(), unaryPred1);
-	//
-#if VER_ge17 // constexpr lambdas
-	constexpr auto unaryPred2 =
-	              [](const Foo& refFoo){return refFoo._x > refFoo._y;};
-	(void) std::count_if(vfoo.cbegin(), vfoo.cend(), unaryPred2);
-#endif
-
-	          int Nz = 42;
-	const     int Na = Nz;
-	const     int Nb = 42;
-	constexpr int Nc = 42;
-//	std::array<float,Na> arrayTNa;    //Err!!  Because Na populated runtime.
-	std::array<float,Nb> arrayTNb;
-	std::array<float,Nc> arrayTNc;
 
 }

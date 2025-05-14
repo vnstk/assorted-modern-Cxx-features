@@ -425,6 +425,7 @@ void test__std_any__other()
 }
 
 
+
 int main() {
 	test__std_optional__retrieveManagedValue();
 	test__std_optional__checkTenantPresence();
@@ -438,4 +439,20 @@ int main() {
 	test__std_any__retrieveManagedValue();
 	test__std_any__checkTenantTypeAndPresence();
 	test__std_any__other();
+
+	void relativeSizeofs (void);
+	relativeSizeofs();
+}
+
+
+#include <memory>
+void relativeSizeofs (void)
+{	PRenteredFU;
+	std::string empty_s;
+	std::string s{"z"};
+	std::string *ps = &s;
+	std::unique_ptr<std::string> ups = std::make_unique<std::string>("z");
+	std::optional<std::string> os{"z"};
+	PRmsg("SZ |empty_s|=%zu |s|=%zu |ps|=%zu |ups|=%zu |os|=%zu\n",
+	      sizeof empty_s, sizeof s, sizeof ps, sizeof ups, sizeof os);
 }
