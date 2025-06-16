@@ -8,7 +8,7 @@ struct Qux {
 	float _f;
 	const char *_cs;
 	Qux(long i, float f, const char *cs): _i(i), _f(f), _cs(cs) {
-		printf("(Ln%d) cstructed a Qux, _i=%ld _f=%.3f _cs='%s'\n",__LINE__,_i,_f,_cs);
+		PRmsg("cstructed a Qux, _i=%ld _f=%.3f _cs='%s'\n",_i,_f,_cs);
 	}
 };
 
@@ -22,13 +22,13 @@ std::tuple<bool,double,unsigned> mkTu (unsigned u) {
 
 uint8_t takesTu (std::tuple<long,float,const char*>&& tu) {
 	return (uint8_t)
-	printf("(Ln%d)  /%s/  called with <%ld,%.2f,%s>\n",
-	       __LINE__, currFU, std::get<0>(tu), std::get<1>(tu), std::get<2>(tu));
+	fuPRmsg("called with <%ld,%.2f,%s>\n",
+	        std::get<0>(tu), std::get<1>(tu), std::get<2>(tu));
 }
 
 uint8_t takesDiscrete (long i, float f, const char* cs) {
 	return (uint8_t)
-	printf("(Ln%d)  /%s/  called with %ld,%.2f,%s\n", __LINE__, currFU, i,f,cs);
+	fuPRmsg("called with %ld,%.2f,%s\n", i,f,cs);
 }
 
 unsigned mulThreeUints (unsigned u1, unsigned u2, unsigned u3) {
@@ -71,8 +71,10 @@ void test__making_a_tuple__and__std_tie()
 	std::tuple<long,float,const char*> t5 = {42L,4.2f,"bunnies"};
 #endif
 
+#if ! VER_ge20 // Became illegal somehow?
 	// make a tuple *of rval refs to*
 	std::tuple<long&&,float&&,const char*&&> t6 = std::forward_as_tuple(42L,4.2f,"bunnies");
+#endif
 
 
 	// std::tie() creates a tuple of lvalue references to its arguments, or to insts of std::ignore.
@@ -205,6 +207,9 @@ void test__apply()
 	static_assert(std::is_same_v<decltype(qA), decltype(qB)>);
 #endif
 }
+
+
+
 
 
 int main () {

@@ -288,24 +288,6 @@ void test__structured_binding__of_userdef_typ ()
 
 
 
-void test__piecewise_construct()
-{	PRenteredFU;
-	//========================= Ctor tags ==================================================
-
-	// std::piecewise_construct
-			// has something to do with std::pair having a ctor overload whose 1st arg is
-			// of type std::piecewise_construct_t; somehow std::unordered_map<Key,T>::emplace(Args&&...)
-			// knows which std::pair ctor overload to call....?????????
-	//
-	std::tuple<long,float> tuA( 42L,3.14f);
-	std::tuple<long,float> tuB(842L,31.4f);
-	printf("Without piecewise_construct, each tuple arg will stay itself (i.e. a tuple).\n");
-	std::pair<Bar,Bar> pearX(                          tuA,tuB);
-	printf("With piecewise_construct, each N-tuple will donate its elems for use as args to a ctor taking N args.\n");
-	std::pair<Bar,Bar> pearY(std::piecewise_construct, tuA,tuB);
-}
-
-
 struct Fnord {
 	float     _f;
 	uint8_t   _hhu;
@@ -369,7 +351,6 @@ int main ()
 	test__structured_binding();
 	test__decltype_and_declval();
 	test__decltype_subtleties();
-	test__piecewise_construct();
 	test__aggregate_initialization();
 	test__list_initialization();
 	test__ref_to_literal();
