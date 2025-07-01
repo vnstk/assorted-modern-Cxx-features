@@ -308,9 +308,10 @@ void printArr (std::array<T,3> const& arr) {
 }
 
 
+#ifdef VER_ge17
 template <int... R>
 constexpr int CpiletimeSum = (... + R); //using fold expression and variadic
-
+#endif
 void test__variables_te()
 {	PRenteredFU;
 	std::array<unsigned,3> uarr = {111U, 222U, 333U};
@@ -320,14 +321,16 @@ void test__variables_te()
 	printArr(uarr);
 	printArr(darr);
 	printArr(farr);
-	
+#ifdef VER_ge17
 	int evalCpiletimeSum = CpiletimeSum<10,-30,7>;
 	PRval(evalCpiletimeSum  ,"%d");
+#endif
 }
 
 
-/* std::conjunction , std::disjunction etc
+/* std::conjunction , std::disjunction  , std::negation --- these are all 17+.
 */
+#ifdef VER_ge17
 	// Variadic; simplest, with a te var.
 template<typename T, typename... Ts>
 constexpr bool allAreFunda = std::conjunction_v<std::is_fundamental<Ts>...>;
@@ -344,10 +347,10 @@ allFunda (T, Ts...)
 
 	// Not variadic, and somewhat silly.
 template<typename T1, typename T2>
-constexpr bool ref_and_unsi__a = std::conjunction<
+constexpr bool ref_and_unsi__a = std::conjunction_v<
 			std::is_reference<T1>
 		,	std::is_unsigned<T2>
-	>::value;
+	>;
 
 void test__conjunction ()
 {	PRenteredFU;
@@ -364,6 +367,12 @@ void test__conjunction ()
 	static_assert(! ref_and_unsi__a<decltype(pi), decltype(u)>  );
 	static_assert(! ref_and_unsi__a<decltype(pi), decltype(i)>  );
 }
+#else
+void test__conjunction ()
+{	PRenteredFU;
+	PRlit("No-op before 17.");
+}
+#endif
 
 
 

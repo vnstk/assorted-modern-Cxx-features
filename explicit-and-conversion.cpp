@@ -77,12 +77,15 @@ int main()
 		SAYeval(B x03{std::move(x01)}  );
 		SAYeval(B x04   );
 //		SAYeval(B x05 = 3.3F   ); //ERR, because nondflt ctor is explicit.
+#ifdef VER_ge17
 		SAYeval(B x06 = (B)3.3F   );
+#endif
 //		SAYeval(uint16_t u00 = x06   );  //ERR, because conv-to-T is explicit.
 		SAYeval(uint16_t u01 = static_cast<uint16_t>(x03)   );
 	}
 
 	{
+#ifdef VER_ge20
 		SAYeval(C x00{3.3F}   );
 		SAYeval(C x01{x00}    );
 		SAYeval(C x03{std::move(x01)}  );
@@ -92,6 +95,7 @@ int main()
 		C x09{"huh", 42L};
 		SAYeval(uint16_t u01 = static_cast<uint16_t>(x03)   );
 		SAYeval(uint8_t  u02 = static_cast<uint8_t >(x03)   ); //????? shouldn't cpile
+#endif
 #endif
 	}
 

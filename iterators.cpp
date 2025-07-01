@@ -10,6 +10,8 @@
 #include <list>
 #include <vector>
 
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+
 
 void test__print_some_properties ()
 {	PRenteredFU;

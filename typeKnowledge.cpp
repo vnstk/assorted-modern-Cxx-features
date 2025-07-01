@@ -92,7 +92,10 @@ struct is_floatingPt<long double> { static const bool value = true; };
 
 // Not strictly necessary, but allows more concise **and hence spiffier** code.
 template <typename T>
-inline constexpr bool is_floatingPt_v = is_floatingPt<T>::value;
+#ifdef VER_ge17
+inline
+#endif
+constexpr bool is_floatingPt_v = is_floatingPt<T>::value;
 
 // But wait!!!  We can achieve yet *****higher***** degree of spiffiness!
 template <typename T>

@@ -173,7 +173,7 @@ void test__valueCategories()
 
 
 int main() {
-	test__query_retval_of_defined_fu();
+//	test__query_retval_of_defined_fu();
 	test__query_rettype_of_undefined_fu();
 	test__query_rettype_of_inaccessible_fu();
 return 0;

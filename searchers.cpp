@@ -1,5 +1,7 @@
 /*   (c)2024 Vainstein K.   */
+#ifdef VER_ge17
 #include "Josuttis--tracknew.hpp"
+#endif
 #include "common.h"
 #include <algorithm>
 #include <array>

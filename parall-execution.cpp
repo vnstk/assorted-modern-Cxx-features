@@ -1,6 +1,8 @@
 /*   (c)2025 Vainstein K.   */
 //XXX Must compile with  -fexceptions
 #include "common.h"
+
+#ifdef VER_ge17
 #include "simple-timer.h"
 #include <vector>
 #include <algorithm>
@@ -67,4 +69,10 @@ int main ()
 #if 0
 
 pmr::..... ??
+#endif
+
+#else
+int main() {
+	PRlit("Everything here needs 17.");
+}
 #endif

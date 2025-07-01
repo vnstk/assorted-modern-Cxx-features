@@ -1,0 +1,36 @@
+#!/bin/bash
+# Vainstein K 30dec2024
+# To swiftly confirm that all demos compile with all versions.
+
+readonly cxxVer=$1
+readonly verChoices='(11|14|17|20|23)'
+[[ "Z${cxxVer}" =~ $verChoices ]] || {
+	echo -e "\n\t\e[33;1mMust give C++ version, i.e. one of $verChoices\e[0m\n" >&2
+	exit 3
+}
+
+shopt -s expand_aliases
+if [ -f gccAliases.sh ]; then
+	. gccAliases.sh || exit 2
+else
+	. ~/gccAliases.sh || exit 2
+fi
+
+
+for f in *.cpp; do
+	extraFlags=''
+
+	[ $f == attributes.cpp ] && continue # The whole point of attributes.cpp is to emit warnings.
+	[ $f == coroutine.cpp ] && continue # In-progress
+	[ $f == exception-throes.cpp ] && extraFlags+=' -fexceptions' # We normally say -fno-exceptions
+	[ $f == parall-execution.cpp ] && extraFlags+=' -fexceptions' # We normally say -fno-exceptions
+	[ $f == te-deduction.cpp ] && continue # In-progress
+	[ $f == uses-of-keyword--using.cpp ] && continue # In-progress
+
+	p14 $extraFlags $f || {
+		echo -e "\n\n\t\e[31;1mFailed to compile:   $f\e[0m\n" >&2
+		exit 1
+	}
+done
+
+exit 0

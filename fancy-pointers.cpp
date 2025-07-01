@@ -1,8 +1,7 @@
 /*   (c)2024 Vainstein K.   */
 #include "common.h"
-#if ! VER_ge17
-#	error "Everything in this file needs 17+"
-#endif
+
+#ifdef VER_ge17
 #include <optional>
 #include <variant>
 #include <any>
@@ -456,3 +455,9 @@ void relativeSizeofs (void)
 	PRmsg("SZ |empty_s|=%zu |s|=%zu |ps|=%zu |ups|=%zu |os|=%zu\n",
 	      sizeof empty_s, sizeof s, sizeof ps, sizeof ups, sizeof os);
 }
+
+#else
+int main() {
+	PRlit("Everything here needs 17.");
+}
+#endif

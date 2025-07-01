@@ -38,9 +38,8 @@ template<typename T>
 void f__takesRvalConstRef (T const&& r)
 {	fuPRmsg("r._ch = %c\n", r._ch);
 	PRwhat(r);
-	static_assert(std::conjunction<
-		std::is_rvalue_reference<decltype(r)>,
-		std::is_const<typename std::remove_reference<decltype(r)>::type>>::value);
+	static_assert(std::is_rvalue_reference<decltype(r)>::value);
+	static_assert(std::is_const<typename std::remove_reference<decltype(r)>::type>::value);
 	std::reference_wrapper<T const> rw = std::cref(r); /* That should have been impossible, since
 			template< class T >
 			void cref( const T&& ) = delete;            */
@@ -101,24 +100,24 @@ void test__unwrapping_the_wrapper()
 //	std::reference_wrapper<Foo>        wmx = std::ref(std::move(y));
 //	std::reference_wrapper<Foo const> wcmx = std::cref(std::move(z));
 
-
 #ifdef VER_ge20
 	// unwrap_reference said to transform refwrap<T> into T&.
 
 	Foo x2;
 	Foo const cx2;
-	std::unwrap_reference<decltype(wx)>::type urx = x2;
-	std::unwrap_reference<decltype(wcx)>::type urcx = cx2;
+	std::unwrap_reference_t<decltype(wx)> urx = x2;
+	std::unwrap_reference_t<decltype(wcx)> urcx = cx2;
 
-	static_assert(std::conjunction< // Let's make sure 
+	static_assert(std::conjunction_v< // Let's make sure 
 		std::is_lvalue_reference<decltype(urx)>,
 		std::negation<
-			std::is_const<typename std::remove_reference<decltype(urx)>::type>
-		>>::value);
-	static_assert(std::conjunction< // Let's make sure 
+			std::is_const<typename std::remove_reference_t<decltype(urx)>>
+		>
+	>);
+	static_assert(std::conjunction_v< // Let's make sure 
 		std::is_lvalue_reference<decltype(urcx)>,
-		std::is_const<typename std::remove_reference<decltype(urcx)>::type>
-		>::value);
+		std::is_const<typename std::remove_reference_t<decltype(urcx)>>
+		>);
 #if 0   //TODO more of
 20
 std::unwrap_reference
@@ -127,8 +126,6 @@ std::unwrap_ref_decay
 https://en.cppreference.com/w/cpp/utility/functional/unwrap_reference
 #endif
 #endif
-
-
 }
 
 

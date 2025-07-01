@@ -109,11 +109,29 @@
 
 
 ////// C++-only section --- begin //////
-#if VER_ge11
+#ifdef __cplusplus
 
 #include <type_traits>
 #include <functional> // For std::is_bind_expression
 //
+
+// Regrettably, std::conjunction is 17+.  On bright side, may avail of ..._v and ..._t syntactic sugar.
+#ifdef VER_ge17
+#	define IS_ptr_to_const(z)  \
+		std::conjunction_v<   \
+			std::is_pointer<decltype(z)>,  \
+			std::is_const<typename std::remove_pointer_t<decltype(z)>>   \
+		> ? "-to-const" : ""
+#	define IS_ref_to_const(z)   \
+		std::conjunction_v<   \
+			std::is_reference<decltype(z)>,  \
+			std::is_const<typename std::remove_reference_t<decltype(z)>>   \
+		> ? "-to-const" : ""
+#else
+#	define IS_ptr_to_const(z) "-?"
+#	define IS_ref_to_const(z) "-?"
+#endif
+
 #define PRwhat(z) \
 	printf("/Ln%d/  Expr \"\e[36m" #z "\e[0m\" is\e[32;3m%s%s%s"\
 "%s%s"\
@@ -125,15 +143,11 @@
 , std::is_member_pointer<decltype(z)>::value ? " membptr" : ""   \
 \
 , std::is_pointer<decltype(z)>::value ? " ptr" : ""   \
-, std::conjunction<   \
-	std::is_pointer<decltype(z)>,  \
-	std::is_const<typename std::remove_pointer<decltype(z)>::type> >::value ? "-to-const" : ""  \
+, IS_ptr_to_const(z)   \
 \
 , std::is_lvalue_reference<decltype(z)>::value ? " lvalRef" : ""   \
 , std::is_rvalue_reference<decltype(z)>::value ? " rvalRef" : ""   \
-, std::conjunction<   \
-	std::is_reference<decltype(z)>,  \
-	std::is_const<typename std::remove_reference<decltype(z)>::type> >::value ? "-to-const" : ""  \
+, IS_ref_to_const(z)   \
 \
 , (std::is_enum<decltype(z)>::value ) ? " enum" : ""   \
 , (std::is_union<decltype(z)>::value ) ? " union" : ""   \
@@ -351,8 +365,7 @@ constexpr const char *reckonArithType__a() {
 */
 
 ////// C++-only section --- end //////
-#endif //VER_ge11
-
+#endif //#ifdef __cplusplus
 
 
 #if VER_ge20

@@ -50,17 +50,20 @@ int main() {
 	Foo fB{3.3f,     52};
 	Foo fC{3.30001f, 32};
 	Foo fD{3.3f,     42};
-	printf("(Ln%d)  fA == fC: %c\n", __LINE__, fA <= fA ? 'T':'F');
-	printf("(Ln%d)  fA <  fC: %c\n", __LINE__, fA <  fC ? 'T':'F');
-	printf("(Ln%d)  fB >  fD: %c\n", __LINE__, fB >  fD ? 'T':'F');
-
+#ifdef VER_ge20
+	PRmsg("fA == fC: %c\n", fA <= fA ? 'T':'F');
+	PRmsg("fA <  fC: %c\n", fA <  fC ? 'T':'F');
+	PRmsg("fB >  fD: %c\n", fB >  fD ? 'T':'F');
+#endif
 	puts("----------------------------------------------");
 
 	Bar bA{3.3f,     42};
 	Bar bB{3.3f,     52};
 	Bar bC{3.30001f, 32};
 	Bar bD{3.3f,     42};
-	printf("(Ln%d)  bA == bC: %c\n", __LINE__, bA <= bA ? 'T':'F');
-	printf("(Ln%d)  bA <  bC: %c\n", __LINE__, bA <  bC ? 'T':'F');
-	printf("(Ln%d)  bB >  bD: %c\n", __LINE__, bB >  bD ? 'T':'F');
+#ifdef VER_ge20
+	PRmsg("bA == bC: %c\n", bA <= bA ? 'T':'F');
+	PRmsg("bA <  bC: %c\n", bA <  bC ? 'T':'F');
+	PRmsg("bB >  bD: %c\n", bB >  bD ? 'T':'F');
+#endif
 }

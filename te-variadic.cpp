@@ -5,7 +5,10 @@
 #include <tuple>
 #include <numeric> // For std::accumulate
 
+#pragma GCC diagnostic ignored "-Wfloat-equal"
 
+
+#if VER_ge17
 /* Operate on arb number of args; instead of a special "base-case" oload,
    test cardinality of parampack-expanded argslist with sizeof...() oper.
 */
@@ -16,6 +19,7 @@ T fsum__b (T first, Args... rest) {
 	else
 		return first + fsum__b(rest...);
 }
+#endif
 
 
 /* Operate on arb number of args; using explicit "operate on the
@@ -46,15 +50,17 @@ long fsumDoubled (Ts const&... args) {
 void test__fsum () {
 	PRenteredFU;
 
+#if VER_ge17
 	auto retX = fsum__b(4, true, 7.0f);
 	PRtyp(retX); // int
 	PRval((double)retX ,"%.3f");
-//	printf("(Ln%d) retZ = %.3f\n",__LINE__, (float)retZ);
+//	PRmsg("retZ = %.3f\n", (float)retZ);
+#endif
 
 	auto retZ = fsum__a(4, true, 7.0f);
 	PRtyp(retZ); // float!!
 	PRval((double)retZ ,"%.3f");
-//	printf("(Ln%d) retZ = %.3f\n",__LINE__, (float)retZ);
+//	PRmsg("retZ = %.3f\n", (float)retZ);
 	//
 	SAYevalPRret( fsumDoubled(11, 13)   ,"%ld"  );  // 22 + 26 = 48
 }
@@ -179,7 +185,7 @@ void qux (std::integer_sequence<size_t, Idx...> intseq) {
 }
 
 
-
+#if VER_ge17
 template<typename... Ts>
 constexpr auto get_type_sizes() {
 	fuPRmsg("sizeof...(Ts) %zu\n", sizeof...(Ts));
@@ -187,8 +193,6 @@ constexpr auto get_type_sizes() {
 }    // Lists sizeof(Ti) for each arg's type Ti:  ^^^^^^^^^^^^^
 
 
-
-#if VER_ge17
 template<typename T1, typename... Ts>     //// fold expr used to *impl* a variadic fu te
 constexpr bool areAllArgTypesSame (T1, Ts...) {
 	fuPRmsg("|Ts| = %zu\n", sizeof...(Ts));
@@ -245,10 +249,11 @@ void test__variadicClaTe()
 	PRtyp( sorta__f_u_l._rest._rest._elem_theOnly ); // long
 	long sevenL = sorta__f_u_l._rest._rest._elem_theOnly;
 	
-
+#if VER_ge17
 	auto sizes = get_type_sizes<char, int, long long>(); // expect 1+4+8=13
 	PRtyp(sizes);
 	SAYevalCHKret((std::accumulate(sizes.cbegin(), sizes.cend(), 0LLU)) ,"%llu",13LLU);
+#endif
 }
 
 
@@ -286,13 +291,14 @@ void test__index_sequence()
 	qux<size_t,0,1,2,3,4>(std::make_index_sequence<5>{});
 	qux<size_t>(std::make_index_sequence<5>{});           // Same effect; good!
 
+#ifdef VER_ge17
 	std::tuple<float,unsigned,long> t3i = std::tuple(3.3f,55U,77L);
 
 //	countDown__b<decltype(t3i), std::tuple_size<decltype(t3i)>::value>(t3i);
 
 	zoo(t3i);
 	bar(t3i);
-
+#endif
 //	zoo<std::make_index_sequence<7>>();
 //	foo<std::make_index_sequence<7>>(std::make_index_sequence<7>{});
 }

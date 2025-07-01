@@ -3,6 +3,7 @@
 
 #include <stdlib.h> // for srand() and rand()
 #include <limits.h> // for UINT_MAX
+#include <algorithm> // for all_of
 #include <map>
 #include <set>
 #include <string>
@@ -113,6 +114,7 @@ void test__node_manip__map () // Maybe this will work better.
 
 void test__node_merge ()
 {	PRenteredFU;
+#ifdef VER_ge17
 	mapFCs_t ma{ {3.33F,"ee"} , {9.99F,"ww"} , {5.55F,"jj"} , {6.66F,"mm"} };
 	mapFCs_t mb{ {2.22F,"bb"} , {11.1F,"yy"} , {5.55F,"kk"} , {4.44F, "hh"} };
 	PRmap(ma, "ma, originally");
@@ -120,8 +122,10 @@ void test__node_merge ()
 	mb.merge(ma);
 	PRmap(ma, "ma, post-merge of mb into ma");
 	PRmap(mb, "mb, post-merge of mb into ma");
+#else
+	PRlit("No-op before 17.");
+#endif
 }
-
 
 void test__bucket_manip ()
 {	PRenteredFU;

@@ -3,11 +3,26 @@
 
 # A few other oft-utile switches:
 #
-#	-E		Halt after preprocessing but before compiling.
-#	-S		Halt after compiling but before assembling.
-#	-c		Halt after assembling but before linking.
+#	-E			Halt after preprocessing but before compiling.
+#	-E -dM		Halt after preprocessing but before compiling; print #define foreach known macro.
+#	-E -dD		As above, but also print all expansions (incl te exapnsions?).
+#	-S			Halt after compiling but before assembling.
+#	-c			Halt after assembling but before linking.
 #
-#	-v		Print actual commands to individual components (cpp, gcc, gas, ldd, ...)
+#	-v			Print actual commands to individual components (cpp, gcc, gas, ldd, ...)
+#
+# And some just-plain-fun switches:
+#
+#	-H						Print header-inclusion tree, indented.  Illuminating.
+#	-fdump-lang-class		Writes a fascinating ".class" file; C++-specific.
+#	-save-temps				The ".i" (or ".ii") are particularly interesting.
+#	-fstack-usage			Writes a ".su" file, with per-func info.
+#	-fno-access-control		Oh was that datamermb declared private, you say?
+#	-fdiagnostics-show-option    Show which diagnostics are controllable programmatically with "#pragma GCC diagnostic ignored/warning ...."
+
+# Recommended by Josuttis:
+#	-fsized-deallocation
+
 
 commonFlags_debug=''                             #### For the best poss debug experience.
 commonFlags_debug+=' -fdebug-types-section'
@@ -26,6 +41,7 @@ commonFlags_debug+=' -O0'
 
 
 cppFlags_base=''
+cppFlags_base+=' -fcheck-new'
 cppFlags_base+=' -fcoroutines'
 cppFlags_base+=' -fdiagnostics-path-format=inline-events'
 cppFlags_base+=' -fdiagnostics-show-template-tree'	# Pretty-print mismatching te types
@@ -54,12 +70,16 @@ cppFlags_base+=' -Wno-parentheses'
 cppFlags_base+=' -Wno-xor-used-as-pow'
 													#### Salutary warnings.
 cppFlags_base+=' -Warray-bounds=1'
+cppFlags_base+=' -Warray-parameter'
+cppFlags_base+=' -Wattribute-alias=2'
 cppFlags_base+=' -Wclobbered'			# vars that might be changed by "longjmp" or "vfork"
 cppFlags_base+=' -Wdangling-else'
+cppFlags_base+=' -Wdangling-pointer=2'  # Might wish to take it down to =1
 cppFlags_base+=' -Wdangling-reference'
 cppFlags_base+=' -Wdeprecated-copy'
 cppFlags_base+=' -Wduplicated-branches'
 cppFlags_base+=' -Wduplicated-cond'
+cppFlags_base+=' -Wfloat-equal'
 cppFlags_base+=' -Wfree-nonheap-object'
 cppFlags_base+=' -Winfinite-recursion'
 cppFlags_base+=' -Winit-self'
@@ -68,7 +88,7 @@ cppFlags_base+=' -Wmismatched-new-delete'
 cppFlags_base+=' -Wmissing-include-dirs'
 cppFlags_base+=' -Wmissing-template-keyword'
 cppFlags_base+=' -Wmultistatement-macros'
-#cppFlags_base+=' -Wnoexcept' #Warn when a noexcept-expression evals to false because of a call to a function which lacks a non-throwing exception specification (i.e. throw() or noexcept) but is known by the compiler to never throw an exception.
+cppFlags_base+=' -Wnoexcept' #Warn when a noexcept-expression evals to false because of a call to a function which lacks a non-throwing exception specification (i.e. throw() or noexcept) but is known by the compiler to never throw an exception.
 cppFlags_base+=' -Wnoexcept-type'
 cppFlags_base+=' -Wnrvo' # Warn when move semantics don't translate to move actuality: most cool!!!!
 cppFlags_base+=' -Wodr'
@@ -79,6 +99,7 @@ cppFlags_base+=' -Wrange-loop-construct' # warns when a range-based for-loop is 
 cppFlags_base+=' -Wredundant-move' # warns when move operation would have been performed even without the std::move call
 cppFlags_base+=' -Wreorder' # Warn when order of memb initializers given in the code does not match the order in which they must be executed
 cppFlags_base+=' -Wrestrict'
+cppFlags_base+=' -Wreturn-local-addr'
 cppFlags_base+=' -Wself-move'
 cppFlags_base+=' -Wsequence-point'
 cppFlags_base+=' -Wshadow=local'

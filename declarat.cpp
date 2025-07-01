@@ -132,10 +132,15 @@ void test__decltype_subtleties()
 	decltype<fuWrapper__f01>::result_type obj_of_retType__f00;
 	PRtyp(obj_of_retType__f00);        // ret type reported as    int
 #	endif
+
+// So GCC doesn't whine "invalid application of 'sizeof' to a function type".
+#pragma GCC diagnostic ignored "-Wpointer-arith"
 	PRtyp(f00);        // ret type reported as    int
 	PRtyp(f01);        // ret type reported as    int const&
 	PRtyp(g00<float>); // ret type reported as    float*
 	PRtyp(g01<float>); // ret type reported as    float[30]
+#pragma GCC diagnostic pop
+
 #endif
 }
 

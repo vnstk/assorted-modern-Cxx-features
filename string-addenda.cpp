@@ -1,8 +1,6 @@
 /*   (c)2025 Vainstein K.   */
 #include "common.h"
-#if ! VER_ge17
-#	error "Everything in this file needs 17+"
-#endif
+#if VER_ge17
 #include <string>
 #include <string_view>
 
@@ -68,6 +66,12 @@ void test__sv()
 int main () {
 	test__sv();
 }
+
+#else
+int main() {
+	PRlit("Everything here needs 17.");
+}
+#endif
 
 
 #if 0

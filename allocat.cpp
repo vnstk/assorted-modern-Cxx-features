@@ -1,6 +1,12 @@
 /*   (c)2024 Vainstein K.   */
+
+#ifndef REPLACING_global__op_new
 #define REPLACING_global__op_new 1
+#endif
+
+#ifndef DEFINING_CUSTOM_global__placem_op_new
 #define DEFINING_CUSTOM_global__placem_op_new 0
+#endif
 
 #include "common.h"
 #include <string>
@@ -13,6 +19,15 @@
 #include <memory>
 #include <scoped_allocator>
 
+#ifndef VER_ge17
+namespace std {
+	template<typename... Ts>
+	struct make_void { typedef void type; };
+ 
+	template<typename... Ts>
+	using void_t = typename make_void<Ts...>::type;
+}
+#endif
 
 #define DEF__hasMembType(membTypeName)                     \
 template <typename, typename = std::void_t<>>              \
