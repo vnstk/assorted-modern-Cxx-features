@@ -23,13 +23,13 @@ struct TypD { /// defined a no-arg ctor; defined a might-throw move ctor
 	float _f{0.22};
 	int64_t _i{22};
 	TypD (float ff) : _f(ff) {}
-	TypD (TypD&& rhs) : _f(rhs._f), _i(rhs._i) {}
+	TypD (TypD&& rhs) noexcept : _f(rhs._f), _i(rhs._i) {}
 };
 struct TypE {
 	float _f{0.22};
 	int64_t _i{22};
 	TypE (float ff) : _f(ff) {}
-	TypE (TypE&& rhs) : _f(rhs._f), _i(rhs._i) {}              // move ctor: might-throw
+	TypE (TypE&& rhs) noexcept : _f(rhs._f), _i(rhs._i) {}              // move ctor: might-throw
 	TypE (const TypE& rhs) noexcept : _f(rhs._f), _i(rhs._i) {}// copy ctor: might-throw
 };
 struct TypF {
@@ -50,17 +50,17 @@ struct TypH {
 	float _f{0.22};
 	int64_t _i{22};
 	TypH (float ff) : _f(ff) {}
-	TypH (TypH&& rhs) : _f(rhs._f), _i(rhs._i) {} // move ctor: might-throw.
+	TypH (TypH&& rhs) noexcept : _f(rhs._f), _i(rhs._i) {} // move ctor: might-throw.
 	TypH (const TypH& rhs) =default;              // copy ctor: defaulted.
 };
 
 struct TypP {
 	unsigned _u{42U};
 	TypP (unsigned u) : _u(u) {}
-	TypP (TypP&& rhs) : _u(rhs._u) {
+	TypP (TypP&& rhs) noexcept : _u(rhs._u) {
 		printf("\tin TypP move ctor, _u=%u\n", _u);
 	}
-	TypP& operator= (TypP&& rhs) {
+	TypP& operator= (TypP&& rhs) noexcept {
 		printf("\tin TypP move assignm, _u=%u rhs._u=%u\n", _u, rhs._u);
 		if (&rhs != this) {
 			_u = rhs._u;

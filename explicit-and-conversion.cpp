@@ -8,7 +8,7 @@ struct A {
     A(float) { fuPRlit("cvertg nondflt ctor"); }
 	//
     A(A const&) { fuPRlit("cvertg copy ctor"); }
-    A(A&&) { fuPRlit("cvertg move ctor"); }
+    A(A&&) noexcept { fuPRlit("cvertg move ctor"); }
 	//
 	template<typename T>
     operator T() const {
@@ -25,7 +25,7 @@ struct B {
 	template<typename Tnumeric, Tnumeric val>
     explicit B(const char *) { fuPRlit("expli nondflt ctor, fu te"); }
     explicit B(B const&) { fuPRlit("expli copy ctor"); }
-    explicit B(B&&) { fuPRlit("expli move ctor"); }
+    explicit B(B&&) noexcept { fuPRlit("expli move ctor"); }
 	//
 	template<typename T>
     explicit operator T() const {
@@ -44,7 +44,7 @@ struct C {
     explicit C() { fuPRlit("expli dflt ctor"); }
 	C(float f) { fuPRlit("expli nondflt ctor"); }
     explicit C(C const&) { fuPRlit("expli copy ctor"); }
-    explicit C(C&&) { fuPRlit("expli move ctor"); }
+    explicit C(C&&) noexcept { fuPRlit("expli move ctor"); }
 	//
 	template<typename T>
 	explicit (sizeof(T) >= 4)

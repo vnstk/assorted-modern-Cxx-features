@@ -152,8 +152,8 @@ struct Foo {
     Foo (char ch) : _ch(ch) {   fuPRmsg("_ch=%c\n",_ch);   }
     Foo (Foo const& rhs) : _ch(rhs._ch) {   fuPRmsg("_ch=%c\n",_ch);   }
 	Foo& operator= (Foo const& rhs) { if (&rhs != this) { _ch = rhs._ch; } return *this; }
-    Foo (Foo&& rhs) : _ch(std::move(rhs._ch)) {   fuPRmsg("_ch=%c\n",_ch);   }
-	Foo& operator= (Foo&& rhs) { if (&rhs != this) { _ch = rhs._ch; rhs._ch = '\0'; } return *this; }
+    Foo (Foo&& rhs) noexcept : _ch(std::move(rhs._ch)) {   fuPRmsg("_ch=%c\n",_ch);   }
+	Foo& operator= (Foo&& rhs) noexcept { if (&rhs != this) { _ch = rhs._ch; rhs._ch = '\0'; } return *this; }
 };
 
 

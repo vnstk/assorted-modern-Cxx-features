@@ -16,7 +16,7 @@ struct Qux {
 	float _flo;
 	Qux (float flo) : _flo(flo) {   fuPRmsg("_flo=%.2f\n",_flo);   }
 	Qux (Qux const& rhs) : _flo(rhs._flo) {   fuPRmsg("_flo=%.2f\n",_flo);   }
-	Qux (Qux&& rhs) : _flo(std::move(rhs._flo)) {   fuPRmsg("_flo=%.2f\n",_flo);   }
+	Qux (Qux&& rhs) noexcept : _flo(std::move(rhs._flo)) {   fuPRmsg("_flo=%.2f\n",_flo);   }
 };
 
 #if 0
